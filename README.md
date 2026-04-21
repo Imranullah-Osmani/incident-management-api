@@ -1,3 +1,4 @@
+
 # incident-management-api
 
 Backend repair case study built around a small incident-management API. The repository includes the runnable sample service, a sanitized write-up of the repair work, and a recreated before/after sample that shows the debugging approach without exposing any confidential code.
@@ -64,3 +65,6 @@ The recreated sample lives in [recreated_sample/README.md](recreated_sample/READ
 ## Monitoring notes
 
 Operational follow-through is documented in [docs/monitoring.md](docs/monitoring.md).
+=======
+# incident-management-api
+
