@@ -1,0 +1,32 @@
+services:
+  api:
+    build: .
+    env_file:
+      - .env
+    ports:
+      - "8002:8000"
+    volumes:
+      - .:/app
+
+  worker:
+    build: .
+    profiles: ["infra"]
+    command: celery -A app.celery_app.celery_app worker --loglevel=info
+    env_file:
+      - .env
+    depends_on:
+      - redis
+    volumes:
+      - .:/app
+
+  redis:
+    image: redis:7
+    profiles: ["infra"]
+
+  db:
+    image: postgres:16
+    profiles: ["infra"]
+    environment:
+      POSTGRES_DB: incidents
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres

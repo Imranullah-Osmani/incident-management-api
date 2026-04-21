@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Incident Management API</title>
+    <link rel="stylesheet" href="/static/site.css">
+</head>
+<body class="incident-body">
+    <div class="incident-shell">
+        <header class="hero">
+            <div class="hero-copy">
+                <p class="eyebrow">Real systems portfolio</p>
+                <h1>Support Ticket and Incident API</h1>
+                <p>
+                    A browser-first incident console layered on top of the FastAPI service. Sign in with demo roles,
+                    create tickets, move status, review visibility behavior, and inspect service readiness without
+                    leaving the browser.
+                </p>
+                <div class="hero-actions">
+                    <a class="button button-primary" href="/docs">Open Swagger Docs</a>
+                    <a class="button button-secondary" href="/health/ready">Readiness Check</a>
+                </div>
+            </div>
+            <div class="hero-side">
+                <div class="credentials-card">
+                    <p class="eyebrow">Demo access</p>
+                    <ul>
+                        {% for account in demo_accounts %}
+                        <li>
+                            <strong>{{ account.role|title }}</strong>
+                            <span>{{ account.email }}</span>
+                            <code>{{ account.password }}</code>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </header>
+
+        <section class="panel-grid">
+            <article class="panel">
+                <div class="section-head">
+                    <p class="eyebrow">Session</p>
+                    <h2>Login and live data</h2>
+                </div>
+                <form id="login-form" class="action-card">
+                    <label>Email</label>
+                    <input name="email" value="admin@example.com">
+                    <label>Password</label>
+                    <input name="password" type="password" value="ChangeMe123!">
+                    <button type="submit">Get Access Token</button>
+                </form>
+                <div class="info-grid">
+                    <div class="info-card">
+                        <span>Current token</span>
+                        <pre id="token-preview">Not authenticated yet.</pre>
+                    </div>
+                    <div class="info-card">
+                        <span>Health</span>
+                        <pre id="health-preview">Loading readiness ...</pre>
+                    </div>
+                </div>
+            </article>
+
+            <article class="panel">
+                <div class="section-head">
+                    <p class="eyebrow">Create</p>
+                    <h2>Open a ticket</h2>
+                </div>
+                <form id="create-form" class="action-card">
+                    <label>Title</label>
+                    <input name="title" value="Production API latency spike">
+                    <label>Description</label>
+                    <textarea name="description">Checkout requests are timing out and customer-facing latency has increased for the past 15 minutes.</textarea>
+                    <label>Priority</label>
+                    <input name="priority" value="high">
+                    <label>Visibility</label>
+                    <select name="visibility">
+                        <option value="internal" selected>internal</option>
+                        <option value="public">public</option>
+                        <option value="restricted">restricted</option>
+                    </select>
+                    <label>Tags (comma separated)</label>
+                    <input name="tags" value="api,latency,checkout">
+                    <button type="submit">Create Ticket</button>
+                </form>
+            </article>
+        </section>
+
+        <section class="panel-grid lower-grid">
+            <article class="panel">
+                <div class="section-head">
+                    <p class="eyebrow">Operate</p>
+                    <h2>Change ticket status</h2>
+                </div>
+                <form id="status-form" class="action-card">
+                    <label>Ticket ID</label>
+                    <input name="ticket_id" placeholder="Paste a ticket id from the list">
+                    <label>New status</label>
+                    <select name="status">
+                        <option value="acknowledged">acknowledged</option>
+                        <option value="investigating">investigating</option>
+                        <option value="resolved">resolved</option>
+                        <option value="closed">closed</option>
+                    </select>
+                    <label>Timeline message</label>
+                    <input name="message" value="Status advanced from the web console.">
+                    <button type="submit">Update Status</button>
+                </form>
+            </article>
+
+            <article class="panel">
+                <div class="section-head">
+                    <p class="eyebrow">Roles</p>
+                    <h2>Seeded users</h2>
+                </div>
+                <pre id="users-preview">Loading users ...</pre>
+            </article>
+        </section>
+
+        <section class="panel-grid lower-grid">
+            <article class="panel panel-wide">
+                <div class="section-head">
+                    <p class="eyebrow">Visibility model</p>
+                    <h2>Tickets visible to the signed-in user</h2>
+                </div>
+                <pre id="tickets-preview">Login to load tickets.</pre>
+            </article>
+
+            <article class="panel">
+                <div class="section-head">
+                    <p class="eyebrow">API guide</p>
+                    <h2>Key endpoints</h2>
+                </div>
+                <div class="endpoint-grid">
+                    {% for endpoint in endpoints %}
+                    <article class="endpoint-card">
+                        <span class="method method-{{ endpoint.method|lower }}">{{ endpoint.method }}</span>
+                        <code>{{ endpoint.path }}</code>
+                        <p>{{ endpoint.summary }}</p>
+                    </article>
+                    {% endfor %}
+                </div>
+            </article>
+        </section>
+    </div>
+
+    <script src="/static/dashboard.js"></script>
+</body>
+</html>
