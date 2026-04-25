@@ -37,6 +37,15 @@ Open:
 - `http://localhost:8002/docs` for Swagger docs
 - `http://localhost:8002/health/ready` for readiness status
 
+### Tests
+
+```bash
+python -m unittest discover -s tests
+python recreated_sample/test_notification_pipeline.py
+```
+
+The repository includes a GitHub Actions workflow at `.github/workflows/ci.yml` that runs policy tests and the recreated case-study sample on every push.
+
 Demo credentials:
 
 - `admin@example.com` / `ChangeMe123!`
@@ -65,6 +74,3 @@ The recreated sample lives in [recreated_sample/README.md](recreated_sample/READ
 ## Monitoring notes
 
 Operational follow-through is documented in [docs/monitoring.md](docs/monitoring.md).
-=======
-# incident-management-api
-
