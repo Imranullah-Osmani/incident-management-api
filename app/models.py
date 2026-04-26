@@ -2,12 +2,16 @@ from __future__ import annotations
 
 import enum
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import DateTime, Enum, ForeignKey, JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
+
+
+def utc_now() -> datetime:
+    return datetime.now(UTC)
 
 
 class UserRole(str, enum.Enum):
@@ -39,7 +43,7 @@ class User(Base):
     hashed_password: Mapped[str] = mapped_column(String(255))
     role: Mapped[UserRole] = mapped_column(Enum(UserRole), index=True)
     is_active: Mapped[bool] = mapped_column(default=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 
     created_tickets: Mapped[list["Ticket"]] = relationship(
         back_populates="created_by",
@@ -67,8 +71,8 @@ class Ticket(Base):
     tags: Mapped[list[str]] = mapped_column(JSON, default=list)
     created_by_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
     assigned_to_id: Mapped[str | None] = mapped_column(ForeignKey("users.id"), nullable=True, index=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now)
 
     created_by: Mapped[User] = relationship(back_populates="created_tickets", foreign_keys=[created_by_id])
     assigned_to: Mapped[User | None] = relationship(back_populates="assigned_tickets", foreign_keys=[assigned_to_id])
@@ -85,7 +89,6 @@ class TicketEvent(Base):
     message: Mapped[str] = mapped_column(String(255))
     previous_value: Mapped[str | None] = mapped_column(String(100), nullable=True)
     new_value: Mapped[str | None] = mapped_column(String(100), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 
     ticket: Mapped[Ticket] = relationship(back_populates="events")
-
