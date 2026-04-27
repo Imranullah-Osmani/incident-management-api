@@ -36,6 +36,7 @@ Open:
 - `http://localhost:8002/` for the browser landing page
 - `http://localhost:8002/docs` for Swagger docs
 - `http://localhost:8002/health/ready` for readiness status
+- Docker Compose health checks cover the API, Redis, and optional PostgreSQL services
 
 ### Tests
 

@@ -7,6 +7,12 @@ services:
       - "8002:8000"
     volumes:
       - .:/app
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/live', timeout=3)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
 
   worker:
     build: .
@@ -15,13 +21,19 @@ services:
     env_file:
       - .env
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     volumes:
       - .:/app
 
   redis:
     image: redis:7
     profiles: ["infra"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   db:
     image: postgres:16
@@ -30,3 +42,8 @@ services:
       POSTGRES_DB: incidents
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d incidents"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
