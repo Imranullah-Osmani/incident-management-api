@@ -63,6 +63,35 @@ class TicketLifecycleTests(unittest.TestCase):
         self.assertEqual(len(events), 1)
         self.assertEqual(events[0].event_type, "ticket_created")
 
+    def test_ticket_creation_rejects_reporter_assignee(self) -> None:
+        with self.assertRaises(HTTPException) as context:
+            create_ticket(
+                TicketCreate(
+                    title="Invalid initial assignment",
+                    description="Reporter accounts should not receive operational ownership.",
+                    visibility=TicketVisibility.internal,
+                    assigned_to_id=self.reporter.id,
+                ),
+                session=self.session,
+                current_user=self.admin,
+            )
+
+        self.assertEqual(context.exception.status_code, 400)
+
+    def test_ticket_creation_allows_initial_agent_assignment(self) -> None:
+        ticket = create_ticket(
+            TicketCreate(
+                title="Preassigned escalation",
+                description="A known support owner is selected when the ticket is opened.",
+                visibility=TicketVisibility.internal,
+                assigned_to_id=self.agent.id,
+            ),
+            session=self.session,
+            current_user=self.admin,
+        )
+
+        self.assertEqual(ticket.assigned_to_id, self.agent.id)
+
     def test_agent_can_update_status_and_append_timeline_event(self) -> None:
         ticket = create_ticket(
             TicketCreate(

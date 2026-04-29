@@ -140,6 +140,13 @@ def append_event(
     )
 
 
+def get_assignable_user(session: Session, assigned_to_id: str) -> User:
+    assignee = session.scalar(select(User).where(User.id == assigned_to_id))
+    if not assignee or not assignee.is_active or assignee.role not in {UserRole.admin, UserRole.agent}:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Assigned user must be an active agent or admin.")
+    return assignee
+
+
 def enqueue_notification(event_type: str, ticket_id: str, recipient: str | None = None) -> None:
     broker = urlparse(settings.redis_url)
     host = broker.hostname
@@ -209,6 +216,9 @@ def create_ticket(
     session: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    if payload.assigned_to_id:
+        get_assignable_user(session, payload.assigned_to_id)
+
     ticket = Ticket(
         title=payload.title,
         description=payload.description,
@@ -262,9 +272,7 @@ def assign_ticket(
 ):
     ensure_agent_or_admin(current_user)
     ticket = get_visible_ticket(session, current_user, ticket_id)
-    assignee = session.scalar(select(User).where(User.id == payload.assigned_to_id))
-    if not assignee or assignee.role not in {UserRole.admin, UserRole.agent}:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Assigned user must be an active agent or admin.")
+    get_assignable_user(session, payload.assigned_to_id)
     previous_assignee = ticket.assigned_to_id
     ticket.assigned_to_id = payload.assigned_to_id
     append_event(session, ticket, current_user, "assignment_changed", payload.message, previous_assignee, payload.assigned_to_id)
