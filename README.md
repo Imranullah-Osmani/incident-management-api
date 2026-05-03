@@ -61,6 +61,8 @@ Demo credentials:
 - `PATCH /tickets/{ticket_id}/status` updates lifecycle state and writes a timeline event
 - `GET /health/ready` reports database and Redis readiness
 
+See [docs/api-examples.md](docs/api-examples.md) for curl examples covering login, readiness, ticket creation, status changes, assignment, and role visibility.
+
 ## Case study
 
 See [docs/case-study.md](docs/case-study.md) for the repair write-up. It covers:
