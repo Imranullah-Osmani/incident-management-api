@@ -1,5 +1,6 @@
 const state = {
   token: null,
+  selectedTicketId: null,
 };
 
 async function fetchJson(url, options = {}) {
@@ -19,6 +20,44 @@ async function fetchJson(url, options = {}) {
 function setPreview(id, payload) {
   const element = document.getElementById(id);
   element.textContent = typeof payload === "string" ? payload : JSON.stringify(payload, null, 2);
+}
+
+function rememberTicket(ticket) {
+  state.selectedTicketId = ticket.id;
+  const ticketInput = document.querySelector("#status-form input[name='ticket_id']");
+  if (ticketInput) {
+    ticketInput.value = ticket.id;
+  }
+}
+
+function renderTicketSummary(ticket) {
+  return [
+    `${ticket.title}`,
+    `ID: ${ticket.id}`,
+    `Status: ${ticket.status}`,
+    `Priority: ${ticket.priority}`,
+    `Visibility: ${ticket.visibility}`,
+  ].join("\n");
+}
+
+function renderTicketDetail(ticket) {
+  const events = ticket.events || [];
+  const timeline = events.length
+    ? events.map((event) => `- ${event.event_type}: ${event.message}`).join("\n")
+    : "- No timeline events returned.";
+
+  return `${renderTicketSummary(ticket)}\n\nTimeline\n${timeline}`;
+}
+
+function renderTicketList(tickets) {
+  if (!tickets.length) {
+    return "No tickets visible for this role yet.";
+  }
+
+  return tickets.map((ticket, index) => {
+    const marker = ticket.id === state.selectedTicketId ? "selected" : `ticket ${index + 1}`;
+    return `${marker.toUpperCase()}\n${renderTicketSummary(ticket)}`;
+  }).join("\n\n");
 }
 
 async function loadHealth() {
@@ -43,7 +82,11 @@ async function loadTickets() {
     return;
   }
   try {
-    setPreview("tickets-preview", await fetchJson("/tickets"));
+    const tickets = await fetchJson("/tickets");
+    if (!state.selectedTicketId && tickets.length) {
+      rememberTicket(tickets[0]);
+    }
+    setPreview("tickets-preview", renderTicketList(tickets));
   } catch (error) {
     setPreview("tickets-preview", `Failed to load tickets:\n${error.message}`);
   }
@@ -59,7 +102,7 @@ document.getElementById("login-form").addEventListener("submit", async (event) =
       body: JSON.stringify(data),
     });
     state.token = payload.access_token;
-    setPreview("token-preview", `${payload.token_type} ${payload.access_token}`);
+    setPreview("token-preview", `${payload.token_type} token active. The raw credential is kept out of the demo console.`);
     await loadTickets();
   } catch (error) {
     setPreview("token-preview", `Login failed:\n${error.message}`);
@@ -83,8 +126,9 @@ document.getElementById("create-form").addEventListener("submit", async (event) 
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
+    rememberTicket(ticket);
     await loadTickets();
-    setPreview("tickets-preview", ticket);
+    setPreview("tickets-preview", `Created and selected ticket.\n\n${renderTicketSummary(ticket)}`);
   } catch (error) {
     setPreview("tickets-preview", `Create failed:\n${error.message}`);
   }
@@ -99,7 +143,8 @@ document.getElementById("status-form").addEventListener("submit", async (event) 
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status: raw.status, message: raw.message }),
     });
-    setPreview("tickets-preview", ticket);
+    rememberTicket(ticket);
+    setPreview("tickets-preview", `Status updated.\n\n${renderTicketDetail(ticket)}`);
   } catch (error) {
     setPreview("tickets-preview", `Status update failed:\n${error.message}`);
   }
