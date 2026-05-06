@@ -45,6 +45,12 @@ python -m unittest discover -s tests
 python recreated_sample/test_notification_pipeline.py
 ```
 
+For the full local verification flow used by CI:
+
+```powershell
+.\scripts\verify.ps1
+```
+
 The repository includes a GitHub Actions workflow at `.github/workflows/ci.yml` that runs policy tests and the recreated case-study sample on every push.
 
 Demo credentials:
