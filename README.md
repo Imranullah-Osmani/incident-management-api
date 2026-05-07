@@ -83,3 +83,7 @@ The recreated sample lives in [recreated_sample/README.md](recreated_sample/READ
 ## Monitoring notes
 
 Operational follow-through is documented in [docs/monitoring.md](docs/monitoring.md).
+
+## Security
+
+See [SECURITY.md](SECURITY.md) for supported security scope, reporting guidance, and local hardening notes.
