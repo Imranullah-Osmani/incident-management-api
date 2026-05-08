@@ -87,3 +87,7 @@ Operational follow-through is documented in [docs/monitoring.md](docs/monitoring
 ## Security
 
 See [SECURITY.md](SECURITY.md) for supported security scope, reporting guidance, and local hardening notes.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for local setup, verification, and pull request guidelines.
