@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import unittest
 
+from pydantic import ValidationError
 
 os.environ["DATABASE_URL"] = "sqlite:///./data/test_incidents_lifecycle.db"
 os.environ["REDIS_URL"] = "redis://127.0.0.1:6390/0"
@@ -62,6 +63,28 @@ class TicketLifecycleTests(unittest.TestCase):
         self.assertEqual(ticket.created_by_id, self.reporter.id)
         self.assertEqual(len(events), 1)
         self.assertEqual(events[0].event_type, "ticket_created")
+
+    def test_ticket_creation_accepts_critical_priority(self) -> None:
+        ticket = create_ticket(
+            TicketCreate(
+                title="Critical payment outage",
+                description="Payments are unavailable for all customers.",
+                priority="critical",
+                visibility=TicketVisibility.internal,
+            ),
+            session=self.session,
+            current_user=self.reporter,
+        )
+
+        self.assertEqual(ticket.priority, "critical")
+
+    def test_ticket_creation_rejects_unknown_priority(self) -> None:
+        with self.assertRaises(ValidationError):
+            TicketCreate(
+                title="Unknown priority",
+                description="Priority must be one of the supported operational levels.",
+                priority="urgent",
+            )
 
     def test_ticket_creation_rejects_reporter_assignee(self) -> None:
         with self.assertRaises(HTTPException) as context:

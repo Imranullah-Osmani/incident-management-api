@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
@@ -29,7 +30,7 @@ class UserResponse(BaseModel):
 class TicketCreate(BaseModel):
     title: str = Field(min_length=5, max_length=200)
     description: str = Field(min_length=10)
-    priority: str = "medium"
+    priority: Literal["low", "medium", "high", "critical"] = "medium"
     visibility: TicketVisibility = TicketVisibility.internal
     tags: list[str] = Field(default_factory=list)
     assigned_to_id: str | None = None
