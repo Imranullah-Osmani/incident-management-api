@@ -116,6 +116,59 @@ class TicketLifecycleTests(unittest.TestCase):
         self.assertEqual(status_events[0].previous_value, TicketStatus.new.value)
         self.assertEqual(status_events[0].new_value, TicketStatus.investigating.value)
 
+    def test_status_update_rejects_invalid_lifecycle_jump(self) -> None:
+        ticket = create_ticket(
+            TicketCreate(
+                title="Skipped lifecycle state",
+                description="Closed should not be reachable directly from new.",
+                visibility=TicketVisibility.public,
+            ),
+            session=self.session,
+            current_user=self.reporter,
+        )
+
+        with self.assertRaises(HTTPException) as context:
+            update_ticket_status(
+                ticket.id,
+                TicketStatusUpdate(status=TicketStatus.closed, message="Invalid direct close."),
+                session=self.session,
+                current_user=self.agent,
+            )
+
+        self.assertEqual(context.exception.status_code, 400)
+
+    def test_status_update_allows_expected_lifecycle_sequence(self) -> None:
+        ticket = create_ticket(
+            TicketCreate(
+                title="Expected lifecycle path",
+                description="Ticket moves through investigation, resolution, and closure.",
+                visibility=TicketVisibility.public,
+            ),
+            session=self.session,
+            current_user=self.reporter,
+        )
+
+        investigating = update_ticket_status(
+            ticket.id,
+            TicketStatusUpdate(status=TicketStatus.investigating, message="Investigation started."),
+            session=self.session,
+            current_user=self.agent,
+        )
+        resolved = update_ticket_status(
+            investigating.id,
+            TicketStatusUpdate(status=TicketStatus.resolved, message="Issue resolved."),
+            session=self.session,
+            current_user=self.agent,
+        )
+        closed = update_ticket_status(
+            resolved.id,
+            TicketStatusUpdate(status=TicketStatus.closed, message="Incident closed."),
+            session=self.session,
+            current_user=self.agent,
+        )
+
+        self.assertEqual(closed.status, TicketStatus.closed)
+
     def test_assignment_requires_agent_or_admin_assignee(self) -> None:
         ticket = create_ticket(
             TicketCreate(

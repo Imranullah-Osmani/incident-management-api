@@ -37,6 +37,14 @@ BASE_DIR = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
+ALLOWED_STATUS_TRANSITIONS = {
+    TicketStatus.new: {TicketStatus.acknowledged, TicketStatus.investigating},
+    TicketStatus.acknowledged: {TicketStatus.investigating, TicketStatus.resolved},
+    TicketStatus.investigating: {TicketStatus.resolved},
+    TicketStatus.resolved: {TicketStatus.closed},
+    TicketStatus.closed: set(),
+}
+
 
 def get_db():
     session = SessionLocal()
@@ -145,6 +153,16 @@ def get_assignable_user(session: Session, assigned_to_id: str) -> User:
     if not assignee or not assignee.is_active or assignee.role not in {UserRole.admin, UserRole.agent}:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Assigned user must be an active agent or admin.")
     return assignee
+
+
+def ensure_valid_status_transition(current_status: TicketStatus, next_status: TicketStatus) -> None:
+    if next_status == current_status:
+        return
+    if next_status not in ALLOWED_STATUS_TRANSITIONS[current_status]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot move ticket from {current_status.value} to {next_status.value}.",
+        )
 
 
 def enqueue_notification(event_type: str, ticket_id: str, recipient: str | None = None) -> None:
@@ -256,6 +274,7 @@ def update_ticket_status(
     ensure_agent_or_admin(current_user)
     ticket = get_visible_ticket(session, current_user, ticket_id)
     previous_status = ticket.status.value
+    ensure_valid_status_transition(ticket.status, payload.status)
     ticket.status = payload.status
     append_event(session, ticket, current_user, "status_changed", payload.message, previous_status, payload.status.value)
     session.commit()
