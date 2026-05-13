@@ -210,14 +210,14 @@ def homepage(request: Request):
 @app.post("/auth/login", response_model=TokenResponse)
 def login(payload: LoginRequest, session: Session = Depends(get_db)) -> TokenResponse:
     user = session.scalar(select(User).where(User.email == payload.email))
-    if not user or not verify_password(payload.password, user.hashed_password):
+    if not user or not user.is_active or not verify_password(payload.password, user.hashed_password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password.")
     return TokenResponse(access_token=create_access_token(user.id))
 
 
 @app.get("/demo/users", response_model=list[UserResponse])
 def demo_users(session: Session = Depends(get_db)):
-    return list(session.scalars(select(User).order_by(User.role, User.email)))
+    return list(session.scalars(select(User).where(User.is_active.is_(True)).order_by(User.role, User.email)))
 
 
 @app.get("/tickets", response_model=list[TicketResponse])

@@ -11,8 +11,9 @@ os.environ["CELERY_TASK_ALWAYS_EAGER"] = "True"
 from fastapi import HTTPException
 
 from app.database import Base, SessionLocal, engine
-from app.main import ensure_agent_or_admin, enqueue_notification, visible_ticket_query
+from app.main import demo_users, ensure_agent_or_admin, enqueue_notification, login, visible_ticket_query
 from app.models import Ticket, TicketVisibility, User, UserRole
+from app.schemas import LoginRequest
 from app.security import hash_password
 
 
@@ -133,6 +134,23 @@ class VisibilityPolicyTests(unittest.TestCase):
             ensure_agent_or_admin(self.reporter)
 
         self.assertEqual(context.exception.status_code, 403)
+
+    def test_inactive_user_cannot_login(self) -> None:
+        self.reporter.is_active = False
+        self.session.commit()
+
+        with self.assertRaises(HTTPException) as context:
+            login(LoginRequest(email=self.reporter.email, password="ChangeMe123!"), session=self.session)
+
+        self.assertEqual(context.exception.status_code, 401)
+
+    def test_demo_users_returns_only_active_accounts(self) -> None:
+        self.reporter.is_active = False
+        self.session.commit()
+
+        users = demo_users(session=self.session)
+
+        self.assertNotIn(self.reporter.email, {user.email for user in users})
 
     def test_notification_enqueue_degrades_without_redis(self) -> None:
         enqueue_notification("ticket_created", self.public_ticket.id)
