@@ -64,6 +64,21 @@ class TicketLifecycleTests(unittest.TestCase):
         self.assertEqual(len(events), 1)
         self.assertEqual(events[0].event_type, "ticket_created")
 
+    def test_ticket_creation_normalizes_tags(self) -> None:
+        ticket = create_ticket(
+            TicketCreate(
+                title="Tag normalization",
+                description="Incoming tags should be cleaned before storage.",
+                priority="medium",
+                visibility=TicketVisibility.internal,
+                tags=[" API ", "api", "", "Checkout", "checkout"],
+            ),
+            session=self.session,
+            current_user=self.reporter,
+        )
+
+        self.assertEqual(ticket.tags, ["api", "checkout"])
+
     def test_ticket_creation_accepts_critical_priority(self) -> None:
         ticket = create_ticket(
             TicketCreate(

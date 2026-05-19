@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 from .models import TicketStatus, TicketVisibility, UserRole
 
@@ -34,6 +34,18 @@ class TicketCreate(BaseModel):
     visibility: TicketVisibility = TicketVisibility.internal
     tags: list[str] = Field(default_factory=list)
     assigned_to_id: str | None = None
+
+    @field_validator("tags")
+    @classmethod
+    def normalize_tags(cls, value: list[str]) -> list[str]:
+        normalized = []
+        seen = set()
+        for tag in value:
+            clean_tag = tag.strip().lower()
+            if clean_tag and clean_tag not in seen:
+                normalized.append(clean_tag)
+                seen.add(clean_tag)
+        return normalized
 
 
 class TicketStatusUpdate(BaseModel):
