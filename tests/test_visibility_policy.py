@@ -144,6 +144,12 @@ class VisibilityPolicyTests(unittest.TestCase):
 
         self.assertEqual(context.exception.status_code, 401)
 
+    def test_login_matches_email_case_insensitively(self) -> None:
+        token = login(LoginRequest(email="REPORTER@EXAMPLE.COM", password="ChangeMe123!"), session=self.session)
+
+        self.assertEqual(token.token_type, "bearer")
+        self.assertTrue(token.access_token)
+
     def test_demo_users_returns_only_active_accounts(self) -> None:
         self.reporter.is_active = False
         self.session.commit()

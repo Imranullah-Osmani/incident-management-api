@@ -10,7 +10,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from redis import Redis
-from sqlalchemy import select, text
+from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.config import settings
@@ -209,7 +209,8 @@ def homepage(request: Request):
 
 @app.post("/auth/login", response_model=TokenResponse)
 def login(payload: LoginRequest, session: Session = Depends(get_db)) -> TokenResponse:
-    user = session.scalar(select(User).where(User.email == payload.email))
+    email = payload.email.strip().lower()
+    user = session.scalar(select(User).where(func.lower(User.email) == email))
     if not user or not user.is_active or not verify_password(payload.password, user.hashed_password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password.")
     return TokenResponse(access_token=create_access_token(user.id))
