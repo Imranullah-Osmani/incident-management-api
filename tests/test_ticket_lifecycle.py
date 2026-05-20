@@ -274,6 +274,30 @@ class TicketLifecycleTests(unittest.TestCase):
         self.assertEqual(len(assignment_events), 1)
         self.assertEqual(assignment_events[0].new_value, self.agent.id)
 
+    def test_same_assignment_does_not_append_timeline_event(self) -> None:
+        ticket = create_ticket(
+            TicketCreate(
+                title="Repeated assignment update",
+                description="Repeated assignment writes should not create duplicate history.",
+                visibility=TicketVisibility.public,
+                assigned_to_id=self.agent.id,
+            ),
+            session=self.session,
+            current_user=self.admin,
+        )
+
+        unchanged = assign_ticket(
+            ticket.id,
+            TicketAssign(assigned_to_id=self.agent.id, message="Already assigned."),
+            session=self.session,
+            current_user=self.admin,
+        )
+
+        events = self.session.scalars(select(TicketEvent).where(TicketEvent.ticket_id == ticket.id)).all()
+        self.assertEqual(unchanged.assigned_to_id, self.agent.id)
+        self.assertEqual(len(events), 1)
+        self.assertEqual(events[0].event_type, "ticket_created")
+
 
 if __name__ == "__main__":
     unittest.main()

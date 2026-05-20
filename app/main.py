@@ -295,6 +295,8 @@ def assign_ticket(
     ensure_agent_or_admin(current_user)
     ticket = get_visible_ticket(session, current_user, ticket_id)
     get_assignable_user(session, payload.assigned_to_id)
+    if ticket.assigned_to_id == payload.assigned_to_id:
+        return get_visible_ticket(session, current_user, ticket.id)
     previous_assignee = ticket.assigned_to_id
     ticket.assigned_to_id = payload.assigned_to_id
     append_event(session, ticket, current_user, "assignment_changed", payload.message, previous_assignee, payload.assigned_to_id)
