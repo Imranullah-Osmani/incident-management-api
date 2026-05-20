@@ -154,6 +154,29 @@ class TicketLifecycleTests(unittest.TestCase):
         self.assertEqual(status_events[0].previous_value, TicketStatus.new.value)
         self.assertEqual(status_events[0].new_value, TicketStatus.investigating.value)
 
+    def test_same_status_update_does_not_append_timeline_event(self) -> None:
+        ticket = create_ticket(
+            TicketCreate(
+                title="Repeated status update",
+                description="Repeated lifecycle writes should not create misleading history.",
+                visibility=TicketVisibility.public,
+            ),
+            session=self.session,
+            current_user=self.reporter,
+        )
+
+        unchanged = update_ticket_status(
+            ticket.id,
+            TicketStatusUpdate(status=TicketStatus.new, message="Already in this state."),
+            session=self.session,
+            current_user=self.agent,
+        )
+
+        events = self.session.scalars(select(TicketEvent).where(TicketEvent.ticket_id == ticket.id)).all()
+        self.assertEqual(unchanged.status, TicketStatus.new)
+        self.assertEqual(len(events), 1)
+        self.assertEqual(events[0].event_type, "ticket_created")
+
     def test_status_update_rejects_invalid_lifecycle_jump(self) -> None:
         ticket = create_ticket(
             TicketCreate(

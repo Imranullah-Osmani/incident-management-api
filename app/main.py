@@ -276,6 +276,8 @@ def update_ticket_status(
     ticket = get_visible_ticket(session, current_user, ticket_id)
     previous_status = ticket.status.value
     ensure_valid_status_transition(ticket.status, payload.status)
+    if payload.status == ticket.status:
+        return get_visible_ticket(session, current_user, ticket.id)
     ticket.status = payload.status
     append_event(session, ticket, current_user, "status_changed", payload.message, previous_status, payload.status.value)
     session.commit()
