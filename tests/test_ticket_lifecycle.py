@@ -79,6 +79,21 @@ class TicketLifecycleTests(unittest.TestCase):
 
         self.assertEqual(ticket.tags, ["api", "checkout"])
 
+    def test_ticket_creation_strips_title_and_description(self) -> None:
+        ticket = create_ticket(
+            TicketCreate(
+                title="  Checkout outage  ",
+                description="  Customers cannot complete payment from the storefront.  ",
+                priority="high",
+                visibility=TicketVisibility.internal,
+            ),
+            session=self.session,
+            current_user=self.reporter,
+        )
+
+        self.assertEqual(ticket.title, "Checkout outage")
+        self.assertEqual(ticket.description, "Customers cannot complete payment from the storefront.")
+
     def test_ticket_creation_accepts_critical_priority(self) -> None:
         ticket = create_ticket(
             TicketCreate(
@@ -297,6 +312,15 @@ class TicketLifecycleTests(unittest.TestCase):
         self.assertEqual(unchanged.assigned_to_id, self.agent.id)
         self.assertEqual(len(events), 1)
         self.assertEqual(events[0].event_type, "ticket_created")
+
+    def test_timeline_messages_are_stripped_and_validated(self) -> None:
+        update = TicketStatusUpdate(status=TicketStatus.acknowledged, message="  Acknowledged by support.  ")
+        assignment = TicketAssign(assigned_to_id=self.agent.id, message="  Assigned to agent.  ")
+
+        self.assertEqual(update.message, "Acknowledged by support.")
+        self.assertEqual(assignment.message, "Assigned to agent.")
+        with self.assertRaises(ValidationError):
+            TicketStatusUpdate(status=TicketStatus.acknowledged, message="   ")
 
 
 if __name__ == "__main__":

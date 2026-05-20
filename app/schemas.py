@@ -35,6 +35,11 @@ class TicketCreate(BaseModel):
     tags: list[str] = Field(default_factory=list)
     assigned_to_id: str | None = None
 
+    @field_validator("title", "description", mode="before")
+    @classmethod
+    def strip_text_fields(cls, value: str) -> str:
+        return value.strip() if isinstance(value, str) else value
+
     @field_validator("tags")
     @classmethod
     def normalize_tags(cls, value: list[str]) -> list[str]:
@@ -50,12 +55,22 @@ class TicketCreate(BaseModel):
 
 class TicketStatusUpdate(BaseModel):
     status: TicketStatus
-    message: str = Field(default="Status updated by API")
+    message: str = Field(default="Status updated by API", min_length=3, max_length=255)
+
+    @field_validator("message", mode="before")
+    @classmethod
+    def strip_message(cls, value: str) -> str:
+        return value.strip() if isinstance(value, str) else value
 
 
 class TicketAssign(BaseModel):
     assigned_to_id: str
-    message: str = Field(default="Ticket assignment updated")
+    message: str = Field(default="Ticket assignment updated", min_length=3, max_length=255)
+
+    @field_validator("message", mode="before")
+    @classmethod
+    def strip_message(cls, value: str) -> str:
+        return value.strip() if isinstance(value, str) else value
 
 
 class TicketEventResponse(BaseModel):
