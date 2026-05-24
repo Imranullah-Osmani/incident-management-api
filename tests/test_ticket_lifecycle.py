@@ -245,6 +245,34 @@ class TicketLifecycleTests(unittest.TestCase):
 
         self.assertEqual(closed.status, TicketStatus.closed)
 
+    def test_ticket_detail_returns_timeline_events_in_chronological_order(self) -> None:
+        ticket = create_ticket(
+            TicketCreate(
+                title="Ordered incident timeline",
+                description="Timeline events should render in the order operators created them.",
+                visibility=TicketVisibility.public,
+            ),
+            session=self.session,
+            current_user=self.reporter,
+        )
+        investigating = update_ticket_status(
+            ticket.id,
+            TicketStatusUpdate(status=TicketStatus.investigating, message="Investigation started."),
+            session=self.session,
+            current_user=self.agent,
+        )
+        assigned = assign_ticket(
+            investigating.id,
+            TicketAssign(assigned_to_id=self.agent.id, message="Assigned to support agent."),
+            session=self.session,
+            current_user=self.admin,
+        )
+
+        self.assertEqual(
+            [event.event_type for event in assigned.events],
+            ["ticket_created", "status_changed", "assignment_changed"],
+        )
+
     def test_assignment_requires_agent_or_admin_assignee(self) -> None:
         ticket = create_ticket(
             TicketCreate(

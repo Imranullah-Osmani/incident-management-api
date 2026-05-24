@@ -76,7 +76,11 @@ class Ticket(Base):
 
     created_by: Mapped[User] = relationship(back_populates="created_tickets", foreign_keys=[created_by_id])
     assigned_to: Mapped[User | None] = relationship(back_populates="assigned_tickets", foreign_keys=[assigned_to_id])
-    events: Mapped[list["TicketEvent"]] = relationship(back_populates="ticket", cascade="all, delete-orphan")
+    events: Mapped[list["TicketEvent"]] = relationship(
+        back_populates="ticket",
+        cascade="all, delete-orphan",
+        order_by="TicketEvent.created_at, TicketEvent.id",
+    )
 
 
 class TicketEvent(Base):
