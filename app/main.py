@@ -136,6 +136,7 @@ def list_visible_tickets(
     priority: str | None = None,
     tag: str | None = None,
     assigned_to: str | None = None,
+    query: str | None = None,
 ) -> list[Ticket]:
     statement = visible_ticket_query(session, user)
     if status_filter:
@@ -158,6 +159,15 @@ def list_visible_tickets(
     if tag:
         normalized_tag = tag.strip().lower()
         tickets = [ticket for ticket in tickets if normalized_tag in ticket.tags]
+    if query:
+        normalized_query = query.strip().lower()
+        tickets = [
+            ticket
+            for ticket in tickets
+            if normalized_query in ticket.title.lower()
+            or normalized_query in ticket.description.lower()
+            or any(normalized_query in tag_value for tag_value in ticket.tags)
+        ]
     return tickets
 
 
@@ -275,10 +285,11 @@ def list_tickets(
     priority: str | None = Query(default=None),
     tag: str | None = Query(default=None),
     assigned_to: str | None = Query(default=None),
+    q: str | None = Query(default=None),
     session: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return list_visible_tickets(session, current_user, status_filter, priority, tag, assigned_to)
+    return list_visible_tickets(session, current_user, status_filter, priority, tag, assigned_to, q)
 
 
 @app.post("/tickets", response_model=TicketResponse, status_code=status.HTTP_201_CREATED)
