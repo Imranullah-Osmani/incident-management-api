@@ -104,6 +104,12 @@ class TicketDetailResponse(TicketResponse):
     events: list[TicketEventResponse] = Field(default_factory=list)
 
 
+class TicketSummaryResponse(BaseModel):
+    visible_total: int
+    status_counts: dict[str, int]
+    priority_counts: dict[str, int]
+
+
 class HealthResponse(BaseModel):
     status: str
     database: str | None = None

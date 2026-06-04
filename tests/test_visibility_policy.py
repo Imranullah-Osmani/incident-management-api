@@ -11,7 +11,7 @@ os.environ["CELERY_TASK_ALWAYS_EAGER"] = "True"
 from fastapi import HTTPException
 
 from app.database import Base, SessionLocal, engine
-from app.main import demo_users, ensure_agent_or_admin, enqueue_notification, list_visible_tickets, login, visible_ticket_query
+from app.main import demo_users, ensure_agent_or_admin, enqueue_notification, list_visible_tickets, login, summarize_visible_tickets, visible_ticket_query
 from app.models import Ticket, TicketStatus, TicketVisibility, User, UserRole
 from app.schemas import LoginRequest
 from app.security import hash_password
@@ -170,6 +170,19 @@ class VisibilityPolicyTests(unittest.TestCase):
         self.assertEqual({ticket.title for ticket in own_queue}, {"Assigned restricted ticket"})
         self.assertIn("Public customer ticket", {ticket.title for ticket in unassigned})
         self.assertEqual({ticket.title for ticket in explicit_owner}, {"Assigned restricted ticket"})
+
+    def test_ticket_summary_counts_only_visible_tickets(self) -> None:
+        self.internal_ticket.status = TicketStatus.investigating
+        self.internal_ticket.priority = "high"
+        self.session.commit()
+
+        reporter_summary = summarize_visible_tickets(self.session, self.reporter)
+        agent_summary = summarize_visible_tickets(self.session, self.agent)
+
+        self.assertEqual(reporter_summary.visible_total, 3)
+        self.assertEqual(reporter_summary.status_counts["investigating"], 1)
+        self.assertEqual(reporter_summary.priority_counts["high"], 1)
+        self.assertEqual(agent_summary.visible_total, 4)
 
     def test_inactive_user_cannot_login(self) -> None:
         self.reporter.is_active = False

@@ -24,6 +24,7 @@ from app.schemas import (
     TicketDetailResponse,
     TicketResponse,
     TicketStatusUpdate,
+    TicketSummaryResponse,
     TokenResponse,
     UserResponse,
 )
@@ -160,6 +161,20 @@ def list_visible_tickets(
     return tickets
 
 
+def summarize_visible_tickets(session: Session, user: User) -> TicketSummaryResponse:
+    tickets = list(session.scalars(visible_ticket_query(session, user)))
+    status_counts = {ticket_status.value: 0 for ticket_status in TicketStatus}
+    priority_counts = {priority: 0 for priority in sorted(SUPPORTED_PRIORITIES)}
+    for ticket in tickets:
+        status_counts[ticket.status.value] += 1
+        priority_counts[ticket.priority] = priority_counts.get(ticket.priority, 0) + 1
+    return TicketSummaryResponse(
+        visible_total=len(tickets),
+        status_counts=status_counts,
+        priority_counts=priority_counts,
+    )
+
+
 def append_event(
     session: Session,
     ticket: Ticket,
@@ -291,6 +306,14 @@ def create_ticket(
     session.refresh(ticket)
     enqueue_notification("ticket_created", ticket.id, None)
     return ticket
+
+
+@app.get("/tickets/summary", response_model=TicketSummaryResponse)
+def ticket_summary(
+    session: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return summarize_visible_tickets(session, current_user)
 
 
 @app.get("/tickets/{ticket_id}", response_model=TicketDetailResponse)
