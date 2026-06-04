@@ -134,6 +134,7 @@ def list_visible_tickets(
     status_filter: TicketStatus | None = None,
     priority: str | None = None,
     tag: str | None = None,
+    assigned_to: str | None = None,
 ) -> list[Ticket]:
     statement = visible_ticket_query(session, user)
     if status_filter:
@@ -143,6 +144,14 @@ def list_visible_tickets(
         if normalized_priority not in SUPPORTED_PRIORITIES:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported ticket priority filter.")
         statement = statement.where(Ticket.priority == normalized_priority)
+    if assigned_to:
+        normalized_assignee = assigned_to.strip().lower()
+        if normalized_assignee == "me":
+            statement = statement.where(Ticket.assigned_to_id == user.id)
+        elif normalized_assignee == "unassigned":
+            statement = statement.where(Ticket.assigned_to_id.is_(None))
+        else:
+            statement = statement.where(Ticket.assigned_to_id == assigned_to.strip())
 
     tickets = list(session.scalars(statement))
     if tag:
@@ -250,10 +259,11 @@ def list_tickets(
     status_filter: TicketStatus | None = Query(default=None, alias="status"),
     priority: str | None = Query(default=None),
     tag: str | None = Query(default=None),
+    assigned_to: str | None = Query(default=None),
     session: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return list_visible_tickets(session, current_user, status_filter, priority, tag)
+    return list_visible_tickets(session, current_user, status_filter, priority, tag, assigned_to)
 
 
 @app.post("/tickets", response_model=TicketResponse, status_code=status.HTTP_201_CREATED)

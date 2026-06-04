@@ -162,6 +162,15 @@ class VisibilityPolicyTests(unittest.TestCase):
 
         self.assertEqual(context.exception.status_code, 400)
 
+    def test_ticket_list_filters_by_assignment_owner(self) -> None:
+        own_queue = list_visible_tickets(self.session, self.agent, assigned_to="me")
+        unassigned = list_visible_tickets(self.session, self.admin, assigned_to="unassigned")
+        explicit_owner = list_visible_tickets(self.session, self.admin, assigned_to=self.agent.id)
+
+        self.assertEqual({ticket.title for ticket in own_queue}, {"Assigned restricted ticket"})
+        self.assertIn("Public customer ticket", {ticket.title for ticket in unassigned})
+        self.assertEqual({ticket.title for ticket in explicit_owner}, {"Assigned restricted ticket"})
+
     def test_inactive_user_cannot_login(self) -> None:
         self.reporter.is_active = False
         self.session.commit()
