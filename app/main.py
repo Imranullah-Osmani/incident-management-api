@@ -4,7 +4,7 @@ import socket
 from pathlib import Path
 from urllib.parse import urlparse
 
-from fastapi import Depends, FastAPI, HTTPException, Request, status
+from fastapi import Depends, FastAPI, HTTPException, Query, Request, status
 from fastapi.responses import HTMLResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.staticfiles import StaticFiles
@@ -44,6 +44,7 @@ ALLOWED_STATUS_TRANSITIONS = {
     TicketStatus.resolved: {TicketStatus.closed},
     TicketStatus.closed: set(),
 }
+SUPPORTED_PRIORITIES = {"low", "medium", "high", "critical"}
 
 
 def get_db():
@@ -125,6 +126,29 @@ def get_visible_ticket(session: Session, user: User, ticket_id: str) -> Ticket:
     if not ticket:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found.")
     return ticket
+
+
+def list_visible_tickets(
+    session: Session,
+    user: User,
+    status_filter: TicketStatus | None = None,
+    priority: str | None = None,
+    tag: str | None = None,
+) -> list[Ticket]:
+    statement = visible_ticket_query(session, user)
+    if status_filter:
+        statement = statement.where(Ticket.status == status_filter)
+    if priority:
+        normalized_priority = priority.strip().lower()
+        if normalized_priority not in SUPPORTED_PRIORITIES:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported ticket priority filter.")
+        statement = statement.where(Ticket.priority == normalized_priority)
+
+    tickets = list(session.scalars(statement))
+    if tag:
+        normalized_tag = tag.strip().lower()
+        tickets = [ticket for ticket in tickets if normalized_tag in ticket.tags]
+    return tickets
 
 
 def append_event(
@@ -223,10 +247,13 @@ def demo_users(session: Session = Depends(get_db)):
 
 @app.get("/tickets", response_model=list[TicketResponse])
 def list_tickets(
+    status_filter: TicketStatus | None = Query(default=None, alias="status"),
+    priority: str | None = Query(default=None),
+    tag: str | None = Query(default=None),
     session: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return list(session.scalars(visible_ticket_query(session, current_user)))
+    return list_visible_tickets(session, current_user, status_filter, priority, tag)
 
 
 @app.post("/tickets", response_model=TicketResponse, status_code=status.HTTP_201_CREATED)

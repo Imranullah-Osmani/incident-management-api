@@ -11,8 +11,8 @@ os.environ["CELERY_TASK_ALWAYS_EAGER"] = "True"
 from fastapi import HTTPException
 
 from app.database import Base, SessionLocal, engine
-from app.main import demo_users, ensure_agent_or_admin, enqueue_notification, login, visible_ticket_query
-from app.models import Ticket, TicketVisibility, User, UserRole
+from app.main import demo_users, ensure_agent_or_admin, enqueue_notification, list_visible_tickets, login, visible_ticket_query
+from app.models import Ticket, TicketStatus, TicketVisibility, User, UserRole
 from app.schemas import LoginRequest
 from app.security import hash_password
 
@@ -78,13 +78,17 @@ class VisibilityPolicyTests(unittest.TestCase):
         *,
         created_by_id: str,
         assigned_to_id: str | None = None,
+        priority: str = "medium",
+        status: TicketStatus = TicketStatus.new,
+        tags: list[str] | None = None,
     ) -> Ticket:
         ticket = Ticket(
             title=title,
             description="Detailed incident context for policy testing.",
-            priority="medium",
+            priority=priority,
+            status=status,
             visibility=visibility,
-            tags=["policy"],
+            tags=tags or ["policy"],
             created_by_id=created_by_id,
             assigned_to_id=assigned_to_id,
         )
@@ -134,6 +138,29 @@ class VisibilityPolicyTests(unittest.TestCase):
             ensure_agent_or_admin(self.reporter)
 
         self.assertEqual(context.exception.status_code, 403)
+
+    def test_ticket_list_filters_visible_results_by_status_priority_and_tag(self) -> None:
+        self.internal_ticket.status = TicketStatus.investigating
+        self.internal_ticket.priority = "high"
+        self.internal_ticket.tags = ["policy", "checkout"]
+        self.public_ticket.priority = "low"
+        self.session.commit()
+
+        tickets = list_visible_tickets(
+            self.session,
+            self.admin,
+            status_filter=TicketStatus.investigating,
+            priority="HIGH",
+            tag="checkout",
+        )
+
+        self.assertEqual([ticket.title for ticket in tickets], ["Internal operations ticket"])
+
+    def test_ticket_list_rejects_unknown_priority_filter(self) -> None:
+        with self.assertRaises(HTTPException) as context:
+            list_visible_tickets(self.session, self.admin, priority="urgent")
+
+        self.assertEqual(context.exception.status_code, 400)
 
     def test_inactive_user_cannot_login(self) -> None:
         self.reporter.is_active = False
