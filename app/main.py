@@ -258,6 +258,7 @@ def homepage(request: Request):
                 {"method": "POST", "path": "/auth/login", "summary": "Issue a JWT for the incident console."},
                 {"method": "GET", "path": "/tickets", "summary": "List tickets visible to the authenticated role."},
                 {"method": "POST", "path": "/tickets", "summary": "Create a new support or incident record."},
+                {"method": "GET", "path": "/tickets/summary", "summary": "Summarize visible tickets by status and priority."},
                 {"method": "PATCH", "path": "/tickets/{ticket_id}/status", "summary": "Move the incident through its lifecycle."},
                 {"method": "GET", "path": "/health/ready", "summary": "Check database, Redis, and worker readiness."},
             ],

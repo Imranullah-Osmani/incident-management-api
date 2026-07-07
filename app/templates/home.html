@@ -125,6 +125,39 @@
                     <p class="eyebrow">Visibility model</p>
                     <h2>Tickets visible to the signed-in user</h2>
                 </div>
+                <form id="filter-form" class="filter-card">
+                    <label>Search
+                        <input name="q" placeholder="checkout, latency, webhook">
+                    </label>
+                    <label>Status
+                        <select name="status">
+                            <option value="">any</option>
+                            <option value="new">new</option>
+                            <option value="acknowledged">acknowledged</option>
+                            <option value="investigating">investigating</option>
+                            <option value="resolved">resolved</option>
+                            <option value="closed">closed</option>
+                        </select>
+                    </label>
+                    <label>Priority
+                        <select name="priority">
+                            <option value="">any</option>
+                            <option value="low">low</option>
+                            <option value="medium">medium</option>
+                            <option value="high">high</option>
+                            <option value="critical">critical</option>
+                        </select>
+                    </label>
+                    <label>Assigned
+                        <select name="assigned_to">
+                            <option value="">any</option>
+                            <option value="me">me</option>
+                            <option value="unassigned">unassigned</option>
+                        </select>
+                    </label>
+                    <button type="submit">Apply Filters</button>
+                </form>
+                <div class="summary-strip" id="summary-preview">Login to load ticket summary.</div>
                 <pre id="tickets-preview">Login to load tickets.</pre>
             </article>
 

@@ -60,6 +60,35 @@ function renderTicketList(tickets) {
   }).join("\n\n");
 }
 
+function renderSummary(summary) {
+  const activeStatuses = Object.entries(summary.status_counts)
+    .filter(([, count]) => count > 0)
+    .map(([status, count]) => `${status}: ${count}`)
+    .join(" | ");
+  const activePriorities = Object.entries(summary.priority_counts)
+    .filter(([, count]) => count > 0)
+    .map(([priority, count]) => `${priority}: ${count}`)
+    .join(" | ");
+
+  return [
+    `Visible tickets: ${summary.visible_total}`,
+    `Status: ${activeStatuses || "none"}`,
+    `Priority: ${activePriorities || "none"}`,
+  ].join("\n");
+}
+
+function buildTicketQuery() {
+  const form = document.getElementById("filter-form");
+  const params = new URLSearchParams();
+  for (const [key, value] of new FormData(form).entries()) {
+    if (value && value.trim()) {
+      params.set(key, value.trim());
+    }
+  }
+  const query = params.toString();
+  return query ? `?${query}` : "";
+}
+
 async function loadHealth() {
   try {
     setPreview("health-preview", await fetchJson("/health/ready"));
@@ -76,13 +105,25 @@ async function loadUsers() {
   }
 }
 
+async function loadSummary() {
+  if (!state.token) {
+    document.getElementById("summary-preview").textContent = "Login to load ticket summary.";
+    return;
+  }
+  try {
+    document.getElementById("summary-preview").textContent = renderSummary(await fetchJson("/tickets/summary"));
+  } catch (error) {
+    document.getElementById("summary-preview").textContent = `Failed to load summary:\n${error.message}`;
+  }
+}
+
 async function loadTickets() {
   if (!state.token) {
     setPreview("tickets-preview", "Login to load tickets.");
     return;
   }
   try {
-    const tickets = await fetchJson("/tickets");
+    const tickets = await fetchJson(`/tickets${buildTicketQuery()}`);
     if (!state.selectedTicketId && tickets.length) {
       rememberTicket(tickets[0]);
     }
@@ -103,6 +144,7 @@ document.getElementById("login-form").addEventListener("submit", async (event) =
     });
     state.token = payload.access_token;
     setPreview("token-preview", `${payload.token_type} token active. The raw credential is kept out of the demo console.`);
+    await loadSummary();
     await loadTickets();
   } catch (error) {
     setPreview("token-preview", `Login failed:\n${error.message}`);
@@ -127,6 +169,7 @@ document.getElementById("create-form").addEventListener("submit", async (event) 
       body: JSON.stringify(payload),
     });
     rememberTicket(ticket);
+    await loadSummary();
     await loadTickets();
     setPreview("tickets-preview", `Created and selected ticket.\n\n${renderTicketSummary(ticket)}`);
   } catch (error) {
@@ -144,10 +187,16 @@ document.getElementById("status-form").addEventListener("submit", async (event) 
       body: JSON.stringify({ status: raw.status, message: raw.message }),
     });
     rememberTicket(ticket);
+    await loadSummary();
     setPreview("tickets-preview", `Status updated.\n\n${renderTicketDetail(ticket)}`);
   } catch (error) {
     setPreview("tickets-preview", `Status update failed:\n${error.message}`);
   }
+});
+
+document.getElementById("filter-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  await loadTickets();
 });
 
 loadHealth();
