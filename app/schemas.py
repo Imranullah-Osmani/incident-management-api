@@ -106,6 +106,8 @@ class TicketDetailResponse(TicketResponse):
 
 class TicketSummaryResponse(BaseModel):
     visible_total: int
+    assigned_total: int
+    unassigned_total: int
     status_counts: dict[str, int]
     priority_counts: dict[str, int]
 

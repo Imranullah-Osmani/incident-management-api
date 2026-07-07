@@ -175,11 +175,16 @@ def summarize_visible_tickets(session: Session, user: User) -> TicketSummaryResp
     tickets = list(session.scalars(visible_ticket_query(session, user)))
     status_counts = {ticket_status.value: 0 for ticket_status in TicketStatus}
     priority_counts = {priority: 0 for priority in sorted(SUPPORTED_PRIORITIES)}
+    assigned_total = 0
     for ticket in tickets:
         status_counts[ticket.status.value] += 1
         priority_counts[ticket.priority] = priority_counts.get(ticket.priority, 0) + 1
+        if ticket.assigned_to_id:
+            assigned_total += 1
     return TicketSummaryResponse(
         visible_total=len(tickets),
+        assigned_total=assigned_total,
+        unassigned_total=len(tickets) - assigned_total,
         status_counts=status_counts,
         priority_counts=priority_counts,
     )
