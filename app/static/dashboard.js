@@ -24,8 +24,7 @@ function setPreview(id, payload) {
 
 function rememberTicket(ticket) {
   state.selectedTicketId = ticket.id;
-  const ticketInput = document.querySelector("#status-form input[name='ticket_id']");
-  if (ticketInput) {
+  for (const ticketInput of document.querySelectorAll("input[name='ticket_id']")) {
     ticketInput.value = ticket.id;
   }
 }
@@ -72,6 +71,7 @@ function renderSummary(summary) {
 
   return [
     `Visible tickets: ${summary.visible_total}`,
+    `Assignment: ${summary.assigned_total} assigned | ${summary.unassigned_total} unassigned`,
     `Status: ${activeStatuses || "none"}`,
     `Priority: ${activePriorities || "none"}`,
   ].join("\n");
@@ -191,6 +191,24 @@ document.getElementById("status-form").addEventListener("submit", async (event) 
     setPreview("tickets-preview", `Status updated.\n\n${renderTicketDetail(ticket)}`);
   } catch (error) {
     setPreview("tickets-preview", `Status update failed:\n${error.message}`);
+  }
+});
+
+document.getElementById("assign-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const raw = Object.fromEntries(new FormData(event.currentTarget).entries());
+  try {
+    const ticket = await fetchJson(`/tickets/${raw.ticket_id}/assign`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ assigned_to_id: raw.assigned_to_id, message: raw.message }),
+    });
+    rememberTicket(ticket);
+    await loadSummary();
+    await loadTickets();
+    setPreview("tickets-preview", `Assignment updated.\n\n${renderTicketDetail(ticket)}`);
+  } catch (error) {
+    setPreview("tickets-preview", `Assignment update failed:\n${error.message}`);
   }
 });
 

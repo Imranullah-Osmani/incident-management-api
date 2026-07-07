@@ -265,6 +265,7 @@ def homepage(request: Request):
                 {"method": "POST", "path": "/tickets", "summary": "Create a new support or incident record."},
                 {"method": "GET", "path": "/tickets/summary", "summary": "Summarize visible tickets by status and priority."},
                 {"method": "PATCH", "path": "/tickets/{ticket_id}/status", "summary": "Move the incident through its lifecycle."},
+                {"method": "PATCH", "path": "/tickets/{ticket_id}/assign", "summary": "Assign visible incidents to an active agent or admin."},
                 {"method": "GET", "path": "/health/ready", "summary": "Check database, Redis, and worker readiness."},
             ],
         },

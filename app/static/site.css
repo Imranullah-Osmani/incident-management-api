@@ -184,6 +184,10 @@ code {
     background: var(--panel-soft);
 }
 
+.stacked-action {
+    margin-top: 16px;
+}
+
 .filter-card {
     display: grid;
     grid-template-columns: 1.2fr repeat(3, minmax(112px, 0.55fr)) auto;
