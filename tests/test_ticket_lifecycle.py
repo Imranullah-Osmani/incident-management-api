@@ -108,6 +108,20 @@ class TicketLifecycleTests(unittest.TestCase):
 
         self.assertEqual(ticket.priority, "critical")
 
+    def test_ticket_creation_normalizes_priority(self) -> None:
+        ticket = create_ticket(
+            TicketCreate(
+                title="Priority normalization",
+                description="Priority values entered by operators should be normalized.",
+                priority=" HIGH ",
+                visibility=TicketVisibility.internal,
+            ),
+            session=self.session,
+            current_user=self.reporter,
+        )
+
+        self.assertEqual(ticket.priority, "high")
+
     def test_ticket_creation_rejects_unknown_priority(self) -> None:
         with self.assertRaises(ValidationError):
             TicketCreate(
