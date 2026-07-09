@@ -331,6 +331,12 @@ class TicketLifecycleTests(unittest.TestCase):
         self.assertEqual(len(assignment_events), 1)
         self.assertEqual(assignment_events[0].new_value, self.agent.id)
 
+    def test_assignment_payload_strips_assignee_id(self) -> None:
+        payload = TicketAssign(assigned_to_id=f"  {self.agent.id}  ", message=" Assigned to agent. ")
+
+        self.assertEqual(payload.assigned_to_id, self.agent.id)
+        self.assertEqual(payload.message, "Assigned to agent.")
+
     def test_same_assignment_does_not_append_timeline_event(self) -> None:
         ticket = create_ticket(
             TicketCreate(

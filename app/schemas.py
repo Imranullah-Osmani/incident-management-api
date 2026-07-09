@@ -72,6 +72,11 @@ class TicketAssign(BaseModel):
     assigned_to_id: str
     message: str = Field(default="Ticket assignment updated", min_length=3, max_length=255)
 
+    @field_validator("assigned_to_id", mode="before")
+    @classmethod
+    def strip_assigned_to_id(cls, value: str) -> str:
+        return value.strip() if isinstance(value, str) else value
+
     @field_validator("message", mode="before")
     @classmethod
     def strip_message(cls, value: str) -> str:
