@@ -201,6 +201,12 @@ class VisibilityPolicyTests(unittest.TestCase):
         self.assertEqual({ticket.title for ticket in reporter_results}, {"Internal operations ticket"})
         self.assertEqual({ticket.title for ticket in agent_results}, {"Internal operations ticket"})
 
+    def test_ticket_list_ignores_blank_search_and_tag_filters(self) -> None:
+        baseline = list_visible_tickets(self.session, self.reporter)
+        filtered = list_visible_tickets(self.session, self.reporter, query="   ", tag="   ")
+
+        self.assertEqual([ticket.id for ticket in filtered], [ticket.id for ticket in baseline])
+
     def test_inactive_user_cannot_login(self) -> None:
         self.reporter.is_active = False
         self.session.commit()
