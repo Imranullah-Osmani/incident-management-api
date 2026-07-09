@@ -171,6 +171,12 @@ class VisibilityPolicyTests(unittest.TestCase):
         self.assertIn("Public customer ticket", {ticket.title for ticket in unassigned})
         self.assertEqual({ticket.title for ticket in explicit_owner}, {"Assigned restricted ticket"})
 
+    def test_ticket_list_ignores_blank_assignment_filter(self) -> None:
+        baseline = list_visible_tickets(self.session, self.agent)
+        filtered = list_visible_tickets(self.session, self.agent, assigned_to="   ")
+
+        self.assertEqual([ticket.id for ticket in filtered], [ticket.id for ticket in baseline])
+
     def test_ticket_summary_counts_only_visible_tickets(self) -> None:
         self.internal_ticket.status = TicketStatus.investigating
         self.internal_ticket.priority = "high"

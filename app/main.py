@@ -148,12 +148,13 @@ def list_visible_tickets(
         statement = statement.where(Ticket.priority == normalized_priority)
     if assigned_to:
         normalized_assignee = assigned_to.strip().lower()
-        if normalized_assignee == "me":
-            statement = statement.where(Ticket.assigned_to_id == user.id)
-        elif normalized_assignee == "unassigned":
-            statement = statement.where(Ticket.assigned_to_id.is_(None))
-        else:
-            statement = statement.where(Ticket.assigned_to_id == assigned_to.strip())
+        if normalized_assignee:
+            if normalized_assignee == "me":
+                statement = statement.where(Ticket.assigned_to_id == user.id)
+            elif normalized_assignee == "unassigned":
+                statement = statement.where(Ticket.assigned_to_id.is_(None))
+            else:
+                statement = statement.where(Ticket.assigned_to_id == assigned_to.strip())
 
     tickets = list(session.scalars(statement))
     if tag:
