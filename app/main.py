@@ -46,6 +46,7 @@ ALLOWED_STATUS_TRANSITIONS = {
     TicketStatus.closed: set(),
 }
 SUPPORTED_PRIORITIES = {"low", "medium", "high", "critical"}
+PRIORITY_ORDER = ("low", "medium", "high", "critical")
 
 
 def get_db():
@@ -177,7 +178,7 @@ def list_visible_tickets(
 def summarize_visible_tickets(session: Session, user: User) -> TicketSummaryResponse:
     tickets = list(session.scalars(visible_ticket_query(session, user)))
     status_counts = {ticket_status.value: 0 for ticket_status in TicketStatus}
-    priority_counts = {priority: 0 for priority in sorted(SUPPORTED_PRIORITIES)}
+    priority_counts = {priority: 0 for priority in PRIORITY_ORDER}
     assigned_total = 0
     for ticket in tickets:
         status_counts[ticket.status.value] += 1

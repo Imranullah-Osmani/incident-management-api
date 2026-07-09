@@ -190,6 +190,7 @@ class VisibilityPolicyTests(unittest.TestCase):
         self.assertEqual(reporter_summary.unassigned_total, 2)
         self.assertEqual(reporter_summary.status_counts["investigating"], 1)
         self.assertEqual(reporter_summary.priority_counts["high"], 1)
+        self.assertEqual(list(reporter_summary.priority_counts.keys()), ["low", "medium", "high", "critical"])
         self.assertEqual(agent_summary.visible_total, 4)
         self.assertEqual(agent_summary.assigned_total, 1)
         self.assertEqual(agent_summary.unassigned_total, 3)
