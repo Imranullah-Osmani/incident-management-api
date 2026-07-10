@@ -159,6 +159,20 @@ class TicketLifecycleTests(unittest.TestCase):
 
         self.assertEqual(ticket.assigned_to_id, self.agent.id)
 
+    def test_ticket_creation_strips_initial_assignee_id(self) -> None:
+        ticket = create_ticket(
+            TicketCreate(
+                title="Copied assignee id",
+                description="Operators often paste assignee identifiers from another screen.",
+                visibility=TicketVisibility.internal,
+                assigned_to_id=f"  {self.agent.id}  ",
+            ),
+            session=self.session,
+            current_user=self.admin,
+        )
+
+        self.assertEqual(ticket.assigned_to_id, self.agent.id)
+
     def test_agent_can_update_status_and_append_timeline_event(self) -> None:
         ticket = create_ticket(
             TicketCreate(

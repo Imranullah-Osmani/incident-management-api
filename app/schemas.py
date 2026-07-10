@@ -45,6 +45,11 @@ class TicketCreate(BaseModel):
     def normalize_priority(cls, value: str) -> str:
         return value.strip().lower() if isinstance(value, str) else value
 
+    @field_validator("assigned_to_id", mode="before")
+    @classmethod
+    def strip_assigned_to_id(cls, value: str | None) -> str | None:
+        return value.strip() if isinstance(value, str) else value
+
     @field_validator("tags")
     @classmethod
     def normalize_tags(cls, value: list[str]) -> list[str]:
