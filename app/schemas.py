@@ -48,7 +48,9 @@ class TicketCreate(BaseModel):
     @field_validator("assigned_to_id", mode="before")
     @classmethod
     def strip_assigned_to_id(cls, value: str | None) -> str | None:
-        return value.strip() if isinstance(value, str) else value
+        if not isinstance(value, str):
+            return value
+        return value.strip() or None
 
     @field_validator("tags")
     @classmethod
@@ -74,7 +76,7 @@ class TicketStatusUpdate(BaseModel):
 
 
 class TicketAssign(BaseModel):
-    assigned_to_id: str
+    assigned_to_id: str = Field(min_length=1)
     message: str = Field(default="Ticket assignment updated", min_length=3, max_length=255)
 
     @field_validator("assigned_to_id", mode="before")

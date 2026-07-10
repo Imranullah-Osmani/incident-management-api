@@ -173,6 +173,20 @@ class TicketLifecycleTests(unittest.TestCase):
 
         self.assertEqual(ticket.assigned_to_id, self.agent.id)
 
+    def test_ticket_creation_treats_blank_initial_assignee_as_unassigned(self) -> None:
+        ticket = create_ticket(
+            TicketCreate(
+                title="Blank initial assignee",
+                description="Optional assignment fields from web forms may submit whitespace.",
+                visibility=TicketVisibility.internal,
+                assigned_to_id="   ",
+            ),
+            session=self.session,
+            current_user=self.admin,
+        )
+
+        self.assertIsNone(ticket.assigned_to_id)
+
     def test_agent_can_update_status_and_append_timeline_event(self) -> None:
         ticket = create_ticket(
             TicketCreate(
@@ -350,6 +364,10 @@ class TicketLifecycleTests(unittest.TestCase):
 
         self.assertEqual(payload.assigned_to_id, self.agent.id)
         self.assertEqual(payload.message, "Assigned to agent.")
+
+    def test_assignment_payload_rejects_blank_assignee_id(self) -> None:
+        with self.assertRaises(ValidationError):
+            TicketAssign(assigned_to_id="   ", message="Assigned to agent.")
 
     def test_same_assignment_does_not_append_timeline_event(self) -> None:
         ticket = create_ticket(
