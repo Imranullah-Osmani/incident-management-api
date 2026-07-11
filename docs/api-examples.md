@@ -49,7 +49,7 @@ curl -s "http://localhost:8002/tickets?limit=25&offset=0" \
 ```
 
 Admins see all tickets. Agents see operational tickets except restricted tickets assigned elsewhere. Reporters see only their own tickets.
-Use `limit` and `offset` for browser or dashboard pagination after RBAC visibility filters are applied.
+Use `limit` and `offset` for browser or dashboard pagination after RBAC visibility filters are applied. The summary endpoint accepts the same visibility-safe filters, for example `GET /tickets/summary?status=investigating&priority=high`.
 
 ## 5. Move a ticket through the lifecycle
 
@@ -72,3 +72,10 @@ curl -s -X PATCH http://localhost:8002/tickets/<ticket-id>/assign \
 ```
 
 Only active `admin` or `agent` users can be assigned to a ticket. Closed tickets reject reassignment so the incident timeline stays stable after resolution.
+
+To return a ticket to the unassigned queue:
+
+```bash
+curl -s -X DELETE http://localhost:8002/tickets/<ticket-id>/assign \
+  -H "Authorization: Bearer <access-token>"
+```
