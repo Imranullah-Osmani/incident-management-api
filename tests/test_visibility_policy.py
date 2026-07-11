@@ -195,6 +195,24 @@ class VisibilityPolicyTests(unittest.TestCase):
         self.assertEqual(agent_summary.assigned_total, 1)
         self.assertEqual(agent_summary.unassigned_total, 3)
 
+    def test_ticket_summary_accepts_same_filters_as_ticket_list(self) -> None:
+        self.internal_ticket.status = TicketStatus.investigating
+        self.internal_ticket.priority = "high"
+        self.internal_ticket.tags = ["checkout"]
+        self.session.commit()
+
+        summary = summarize_visible_tickets(
+            self.session,
+            self.admin,
+            status_filter=TicketStatus.investigating,
+            priority="high",
+            tag="checkout",
+        )
+
+        self.assertEqual(summary.visible_total, 1)
+        self.assertEqual(summary.status_counts["investigating"], 1)
+        self.assertEqual(summary.priority_counts["high"], 1)
+
     def test_ticket_list_searches_visible_title_description_and_tags(self) -> None:
         self.internal_ticket.description = "Checkout webhook failures are affecting payments."
         self.internal_ticket.tags = ["checkout", "payments"]

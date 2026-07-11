@@ -180,9 +180,16 @@ def list_visible_tickets(
         tickets = tickets[:limit]
     return tickets
 
-
-def summarize_visible_tickets(session: Session, user: User) -> TicketSummaryResponse:
-    tickets = list(session.scalars(visible_ticket_query(session, user)))
+def summarize_visible_tickets(
+    session: Session,
+    user: User,
+    status_filter: TicketStatus | None = None,
+    priority: str | None = None,
+    tag: str | None = None,
+    assigned_to: str | None = None,
+    query: str | None = None,
+) -> TicketSummaryResponse:
+    tickets = list_visible_tickets(session, user, status_filter, priority, tag, assigned_to, query)
     status_counts = {ticket_status.value: 0 for ticket_status in TicketStatus}
     priority_counts = {priority: 0 for priority in PRIORITY_ORDER}
     assigned_total = 0
@@ -345,10 +352,15 @@ def create_ticket(
 
 @app.get("/tickets/summary", response_model=TicketSummaryResponse)
 def ticket_summary(
+    status_filter: TicketStatus | None = Query(default=None, alias="status"),
+    priority: str | None = Query(default=None),
+    tag: str | None = Query(default=None),
+    assigned_to: str | None = Query(default=None),
+    q: str | None = Query(default=None),
     session: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return summarize_visible_tickets(session, current_user)
+    return summarize_visible_tickets(session, current_user, status_filter, priority, tag, assigned_to, q)
 
 
 @app.get("/tickets/{ticket_id}", response_model=TicketDetailResponse)
@@ -398,6 +410,25 @@ def assign_ticket(
     append_event(session, ticket, current_user, "assignment_changed", payload.message, previous_assignee, payload.assigned_to_id)
     session.commit()
     enqueue_notification("assignment_changed", ticket.id, payload.assigned_to_id)
+    return get_visible_ticket(session, current_user, ticket.id)
+
+
+@app.delete("/tickets/{ticket_id}/assign", response_model=TicketDetailResponse)
+def unassign_ticket(
+    ticket_id: str,
+    session: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    ensure_agent_or_admin(current_user)
+    ticket = get_visible_ticket(session, current_user, ticket_id)
+    ensure_ticket_accepts_assignment(ticket)
+    if ticket.assigned_to_id is None:
+        return get_visible_ticket(session, current_user, ticket.id)
+    previous_assignee = ticket.assigned_to_id
+    ticket.assigned_to_id = None
+    append_event(session, ticket, current_user, "assignment_removed", "Ticket assignment removed", previous_assignee, None)
+    session.commit()
+    enqueue_notification("assignment_removed", ticket.id, ticket.created_by_id)
     return get_visible_ticket(session, current_user, ticket.id)
 
 

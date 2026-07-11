@@ -32,7 +32,7 @@ class TicketCreate(BaseModel):
     description: str = Field(min_length=10)
     priority: Literal["low", "medium", "high", "critical"] = "medium"
     visibility: TicketVisibility = TicketVisibility.internal
-    tags: list[str] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list, max_length=10)
     assigned_to_id: str | None = None
 
     @field_validator("title", "description", mode="before")
@@ -59,6 +59,8 @@ class TicketCreate(BaseModel):
         seen = set()
         for tag in value:
             clean_tag = tag.strip().lower()
+            if len(clean_tag) > 40:
+                raise ValueError("Tags must be 40 characters or fewer.")
             if clean_tag and clean_tag not in seen:
                 normalized.append(clean_tag)
                 seen.add(clean_tag)

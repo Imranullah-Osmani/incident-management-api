@@ -13,7 +13,7 @@ from fastapi import HTTPException
 from sqlalchemy import select
 
 from app.database import Base, SessionLocal, engine
-from app.main import assign_ticket, create_ticket, update_ticket_status
+from app.main import assign_ticket, create_ticket, unassign_ticket, update_ticket_status
 from app.models import TicketEvent, TicketStatus, TicketVisibility, User, UserRole
 from app.schemas import TicketAssign, TicketCreate, TicketStatusUpdate
 from app.security import hash_password
@@ -78,6 +78,21 @@ class TicketLifecycleTests(unittest.TestCase):
         )
 
         self.assertEqual(ticket.tags, ["api", "checkout"])
+
+    def test_ticket_creation_rejects_excessive_tag_payloads(self) -> None:
+        with self.assertRaises(ValidationError):
+            TicketCreate(
+                title="Too many tags",
+                description="Tag payloads should stay bounded for dashboard filtering.",
+                tags=[f"tag-{index}" for index in range(11)],
+            )
+
+        with self.assertRaises(ValidationError):
+            TicketCreate(
+                title="Tag too long",
+                description="Tag labels should stay short enough for summaries.",
+                tags=["x" * 41],
+            )
 
     def test_ticket_creation_strips_title_and_description(self) -> None:
         ticket = create_ticket(
@@ -392,6 +407,25 @@ class TicketLifecycleTests(unittest.TestCase):
         self.assertEqual(unchanged.assigned_to_id, self.agent.id)
         self.assertEqual(len(events), 1)
         self.assertEqual(events[0].event_type, "ticket_created")
+
+    def test_admin_can_remove_ticket_assignment(self) -> None:
+        ticket = create_ticket(
+            TicketCreate(
+                title="Remove assignment",
+                description="Operational ownership can be cleared when a ticket returns to the queue.",
+                visibility=TicketVisibility.public,
+                assigned_to_id=self.agent.id,
+            ),
+            session=self.session,
+            current_user=self.admin,
+        )
+
+        unassigned = unassign_ticket(ticket.id, session=self.session, current_user=self.admin)
+
+        assignment_events = [event for event in unassigned.events if event.event_type == "assignment_removed"]
+        self.assertIsNone(unassigned.assigned_to_id)
+        self.assertEqual(len(assignment_events), 1)
+        self.assertEqual(assignment_events[0].previous_value, self.agent.id)
 
     def test_closed_ticket_cannot_be_reassigned(self) -> None:
         ticket = create_ticket(
