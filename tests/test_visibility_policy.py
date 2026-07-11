@@ -214,6 +214,12 @@ class VisibilityPolicyTests(unittest.TestCase):
 
         self.assertEqual([ticket.id for ticket in filtered], [ticket.id for ticket in baseline])
 
+    def test_ticket_list_paginates_after_visibility_filters(self) -> None:
+        baseline = list_visible_tickets(self.session, self.admin)
+        paged = list_visible_tickets(self.session, self.admin, limit=2, offset=1)
+
+        self.assertEqual([ticket.id for ticket in paged], [ticket.id for ticket in baseline][1:3])
+
     def test_inactive_user_cannot_login(self) -> None:
         self.reporter.is_active = False
         self.session.commit()

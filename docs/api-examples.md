@@ -44,11 +44,12 @@ curl -s -X POST http://localhost:8002/tickets \
 ## 4. List visible tickets
 
 ```bash
-curl -s http://localhost:8002/tickets \
+curl -s "http://localhost:8002/tickets?limit=25&offset=0" \
   -H "Authorization: Bearer <access-token>"
 ```
 
 Admins see all tickets. Agents see operational tickets except restricted tickets assigned elsewhere. Reporters see only their own tickets.
+Use `limit` and `offset` for browser or dashboard pagination after RBAC visibility filters are applied.
 
 ## 5. Move a ticket through the lifecycle
 
@@ -70,4 +71,4 @@ curl -s -X PATCH http://localhost:8002/tickets/<ticket-id>/assign \
   -d '{"assigned_to_id":"<agent-or-admin-user-id>","message":"Assigned to the support owner."}'
 ```
 
-Only active `admin` or `agent` users can be assigned to a ticket.
+Only active `admin` or `agent` users can be assigned to a ticket. Closed tickets reject reassignment so the incident timeline stays stable after resolution.

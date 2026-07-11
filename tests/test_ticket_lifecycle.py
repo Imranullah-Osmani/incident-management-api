@@ -393,6 +393,46 @@ class TicketLifecycleTests(unittest.TestCase):
         self.assertEqual(len(events), 1)
         self.assertEqual(events[0].event_type, "ticket_created")
 
+    def test_closed_ticket_cannot_be_reassigned(self) -> None:
+        ticket = create_ticket(
+            TicketCreate(
+                title="Closed assignment guard",
+                description="Closed incidents should not accept operational ownership changes.",
+                visibility=TicketVisibility.public,
+            ),
+            session=self.session,
+            current_user=self.reporter,
+        )
+        investigating = update_ticket_status(
+            ticket.id,
+            TicketStatusUpdate(status=TicketStatus.investigating, message="Investigation started."),
+            session=self.session,
+            current_user=self.agent,
+        )
+        resolved = update_ticket_status(
+            investigating.id,
+            TicketStatusUpdate(status=TicketStatus.resolved, message="Issue resolved."),
+            session=self.session,
+            current_user=self.agent,
+        )
+        closed = update_ticket_status(
+            resolved.id,
+            TicketStatusUpdate(status=TicketStatus.closed, message="Incident closed."),
+            session=self.session,
+            current_user=self.agent,
+        )
+
+        with self.assertRaises(HTTPException) as context:
+            assign_ticket(
+                closed.id,
+                TicketAssign(assigned_to_id=self.agent.id, message="Assign after close."),
+                session=self.session,
+                current_user=self.admin,
+            )
+
+        self.assertEqual(context.exception.status_code, 400)
+        self.assertIn("Closed tickets cannot be reassigned", context.exception.detail)
+
     def test_timeline_messages_are_stripped_and_validated(self) -> None:
         update = TicketStatusUpdate(status=TicketStatus.acknowledged, message="  Acknowledged by support.  ")
         assignment = TicketAssign(assigned_to_id=self.agent.id, message="  Assigned to agent.  ")
