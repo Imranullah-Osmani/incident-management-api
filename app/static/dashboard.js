@@ -111,7 +111,7 @@ async function loadSummary() {
     return;
   }
   try {
-    document.getElementById("summary-preview").textContent = renderSummary(await fetchJson("/tickets/summary"));
+    document.getElementById("summary-preview").textContent = renderSummary(await fetchJson(`/tickets/summary${buildTicketQuery()}`));
   } catch (error) {
     document.getElementById("summary-preview").textContent = `Failed to load summary:\n${error.message}`;
   }
@@ -212,8 +212,25 @@ document.getElementById("assign-form").addEventListener("submit", async (event) 
   }
 });
 
+document.getElementById("unassign-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const raw = Object.fromEntries(new FormData(event.currentTarget).entries());
+  try {
+    const ticket = await fetchJson(`/tickets/${raw.ticket_id}/assign`, {
+      method: "DELETE",
+    });
+    rememberTicket(ticket);
+    await loadSummary();
+    await loadTickets();
+    setPreview("tickets-preview", `Assignment removed.\n\n${renderTicketDetail(ticket)}`);
+  } catch (error) {
+    setPreview("tickets-preview", `Assignment removal failed:\n${error.message}`);
+  }
+});
+
 document.getElementById("filter-form").addEventListener("submit", async (event) => {
   event.preventDefault();
+  await loadSummary();
   await loadTickets();
 });
 
