@@ -156,6 +156,11 @@ class VisibilityPolicyTests(unittest.TestCase):
 
         self.assertEqual([ticket.title for ticket in tickets], ["Internal operations ticket"])
 
+    def test_ticket_list_filters_visible_results_by_visibility(self) -> None:
+        tickets = list_visible_tickets(self.session, self.admin, visibility=TicketVisibility.restricted)
+
+        self.assertEqual({ticket.title for ticket in tickets}, {"Assigned restricted ticket", "Hidden restricted ticket", "Own restricted ticket"})
+
     def test_ticket_list_rejects_unknown_priority_filter(self) -> None:
         with self.assertRaises(HTTPException) as context:
             list_visible_tickets(self.session, self.admin, priority="urgent")
@@ -207,6 +212,7 @@ class VisibilityPolicyTests(unittest.TestCase):
             status_filter=TicketStatus.investigating,
             priority="high",
             tag="checkout",
+            visibility=TicketVisibility.internal,
         )
 
         self.assertEqual(summary.visible_total, 1)

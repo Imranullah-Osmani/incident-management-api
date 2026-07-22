@@ -136,6 +136,7 @@ def list_visible_tickets(
     status_filter: TicketStatus | None = None,
     priority: str | None = None,
     tag: str | None = None,
+    visibility: TicketVisibility | None = None,
     assigned_to: str | None = None,
     query: str | None = None,
     limit: int | None = None,
@@ -149,6 +150,8 @@ def list_visible_tickets(
         if normalized_priority not in SUPPORTED_PRIORITIES:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported ticket priority filter.")
         statement = statement.where(Ticket.priority == normalized_priority)
+    if visibility:
+        statement = statement.where(Ticket.visibility == visibility)
     if assigned_to:
         normalized_assignee = assigned_to.strip().lower()
         if normalized_assignee:
@@ -186,10 +189,11 @@ def summarize_visible_tickets(
     status_filter: TicketStatus | None = None,
     priority: str | None = None,
     tag: str | None = None,
+    visibility: TicketVisibility | None = None,
     assigned_to: str | None = None,
     query: str | None = None,
 ) -> TicketSummaryResponse:
-    tickets = list_visible_tickets(session, user, status_filter, priority, tag, assigned_to, query)
+    tickets = list_visible_tickets(session, user, status_filter, priority, tag, visibility, assigned_to, query)
     status_counts = {ticket_status.value: 0 for ticket_status in TicketStatus}
     priority_counts = {priority: 0 for priority in PRIORITY_ORDER}
     assigned_total = 0
@@ -313,6 +317,7 @@ def list_tickets(
     status_filter: TicketStatus | None = Query(default=None, alias="status"),
     priority: str | None = Query(default=None),
     tag: str | None = Query(default=None),
+    visibility: TicketVisibility | None = Query(default=None),
     assigned_to: str | None = Query(default=None),
     q: str | None = Query(default=None),
     limit: int | None = Query(default=None, ge=1, le=100),
@@ -320,7 +325,7 @@ def list_tickets(
     session: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return list_visible_tickets(session, current_user, status_filter, priority, tag, assigned_to, q, limit, offset)
+    return list_visible_tickets(session, current_user, status_filter, priority, tag, visibility, assigned_to, q, limit, offset)
 
 
 @app.post("/tickets", response_model=TicketResponse, status_code=status.HTTP_201_CREATED)
@@ -355,12 +360,13 @@ def ticket_summary(
     status_filter: TicketStatus | None = Query(default=None, alias="status"),
     priority: str | None = Query(default=None),
     tag: str | None = Query(default=None),
+    visibility: TicketVisibility | None = Query(default=None),
     assigned_to: str | None = Query(default=None),
     q: str | None = Query(default=None),
     session: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return summarize_visible_tickets(session, current_user, status_filter, priority, tag, assigned_to, q)
+    return summarize_visible_tickets(session, current_user, status_filter, priority, tag, visibility, assigned_to, q)
 
 
 @app.get("/tickets/{ticket_id}", response_model=TicketDetailResponse)

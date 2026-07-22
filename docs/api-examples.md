@@ -44,12 +44,12 @@ curl -s -X POST http://localhost:8002/tickets \
 ## 4. List visible tickets
 
 ```bash
-curl -s "http://localhost:8002/tickets?limit=25&offset=0" \
+curl -s "http://localhost:8002/tickets?visibility=internal&limit=25&offset=0" \
   -H "Authorization: Bearer <access-token>"
 ```
 
 Admins see all tickets. Agents see operational tickets except restricted tickets assigned elsewhere. Reporters see only their own tickets.
-Use `limit` and `offset` for browser or dashboard pagination after RBAC visibility filters are applied. The summary endpoint accepts the same visibility-safe filters, for example `GET /tickets/summary?status=investigating&priority=high`.
+Use `visibility`, `status`, `priority`, `tag`, `assigned_to`, `q`, `limit`, and `offset` for browser or dashboard filtering after RBAC visibility rules are applied. The summary endpoint accepts the same visibility-safe filters, for example `GET /tickets/summary?visibility=internal&status=investigating&priority=high`.
 
 ## 5. Move a ticket through the lifecycle
 
