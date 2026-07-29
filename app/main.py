@@ -297,6 +297,7 @@ def homepage(request: Request):
                 {"method": "GET", "path": "/tickets/summary", "summary": "Summarize visible tickets by status and priority."},
                 {"method": "PATCH", "path": "/tickets/{ticket_id}/status", "summary": "Move the incident through its lifecycle."},
                 {"method": "PATCH", "path": "/tickets/{ticket_id}/assign", "summary": "Assign visible incidents to an active agent or admin."},
+                {"method": "DELETE", "path": "/tickets/{ticket_id}/assign", "summary": "Return a visible incident to the unassigned queue."},
                 {"method": "GET", "path": "/health/ready", "summary": "Check database, Redis, and worker readiness."},
             ],
         },

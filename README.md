@@ -65,6 +65,7 @@ Demo credentials:
 - `GET /tickets` returns incidents visible to the authenticated user
 - `POST /tickets` creates a new support or incident ticket
 - `PATCH /tickets/{ticket_id}/status` updates lifecycle state and writes a timeline event
+- `DELETE /tickets/{ticket_id}/assign` returns a visible incident to the unassigned queue
 - `GET /health/ready` reports database and Redis readiness
 
 See [docs/api-examples.md](docs/api-examples.md) for curl examples covering login, readiness, ticket creation, status changes, assignment, and role visibility.
