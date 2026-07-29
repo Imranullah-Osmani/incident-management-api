@@ -244,6 +244,15 @@ class VisibilityPolicyTests(unittest.TestCase):
 
         self.assertEqual([ticket.id for ticket in paged], [ticket.id for ticket in baseline][1:3])
 
+    def test_ticket_list_rejects_invalid_pagination_bounds(self) -> None:
+        with self.assertRaises(HTTPException) as limit_context:
+            list_visible_tickets(self.session, self.admin, limit=0)
+        with self.assertRaises(HTTPException) as offset_context:
+            list_visible_tickets(self.session, self.admin, offset=-1)
+
+        self.assertEqual(limit_context.exception.status_code, 400)
+        self.assertEqual(offset_context.exception.status_code, 400)
+
     def test_inactive_user_cannot_login(self) -> None:
         self.reporter.is_active = False
         self.session.commit()

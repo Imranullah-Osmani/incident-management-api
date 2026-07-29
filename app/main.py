@@ -142,6 +142,11 @@ def list_visible_tickets(
     limit: int | None = None,
     offset: int = 0,
 ) -> list[Ticket]:
+    if offset < 0:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Offset must be zero or greater.")
+    if limit is not None and limit < 1:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Limit must be at least 1.")
+
     statement = visible_ticket_query(session, user)
     if status_filter:
         statement = statement.where(Ticket.status == status_filter)
