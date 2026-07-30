@@ -188,6 +188,7 @@ document.getElementById("status-form").addEventListener("submit", async (event) 
     });
     rememberTicket(ticket);
     await loadSummary();
+    await loadTickets();
     setPreview("tickets-preview", `Status updated.\n\n${renderTicketDetail(ticket)}`);
   } catch (error) {
     setPreview("tickets-preview", `Status update failed:\n${error.message}`);
