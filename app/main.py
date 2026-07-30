@@ -457,12 +457,16 @@ def ready_health(session: Session = Depends(get_db)) -> HealthResponse:
     except Exception:
         database_status = "error"
 
+    redis_client = None
     try:
         redis_client = Redis.from_url(settings.redis_url)
         redis_client.ping()
         redis_status = "ok"
     except Exception:
         redis_status = "error"
+    finally:
+        if redis_client is not None:
+            redis_client.close()
 
     worker_mode = "eager" if settings.celery_task_always_eager else "brokered"
     overall = "ok" if database_status == "ok" and redis_status == "ok" else "degraded"
