@@ -4,7 +4,7 @@ import socket
 from pathlib import Path
 from urllib.parse import urlparse
 
-from fastapi import Depends, FastAPI, HTTPException, Query, Request, status
+from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response, status
 from fastapi.responses import HTMLResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.staticfiles import StaticFiles
@@ -450,7 +450,7 @@ def live_health() -> HealthResponse:
 
 
 @app.get("/health/ready", response_model=HealthResponse)
-def ready_health(session: Session = Depends(get_db)) -> HealthResponse:
+def ready_health(response: Response, session: Session = Depends(get_db)) -> HealthResponse:
     try:
         session.execute(text("SELECT 1"))
         database_status = "ok"
@@ -470,4 +470,6 @@ def ready_health(session: Session = Depends(get_db)) -> HealthResponse:
 
     worker_mode = "eager" if settings.celery_task_always_eager else "brokered"
     overall = "ok" if database_status == "ok" and redis_status == "ok" else "degraded"
+    if overall != "ok":
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
     return HealthResponse(status=overall, database=database_status, redis=redis_status, worker_mode=worker_mode)
