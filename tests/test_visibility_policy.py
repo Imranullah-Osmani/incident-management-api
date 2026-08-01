@@ -232,6 +232,16 @@ class VisibilityPolicyTests(unittest.TestCase):
         self.assertEqual({ticket.title for ticket in reporter_results}, {"Internal operations ticket"})
         self.assertEqual({ticket.title for ticket in agent_results}, {"Internal operations ticket"})
 
+    def test_ticket_list_searches_mixed_case_tags(self) -> None:
+        self.internal_ticket.tags = ["Checkout", "Payments"]
+        self.session.commit()
+
+        tag_results = list_visible_tickets(self.session, self.admin, tag="checkout")
+        query_results = list_visible_tickets(self.session, self.admin, query="payments")
+
+        self.assertIn("Internal operations ticket", {ticket.title for ticket in tag_results})
+        self.assertIn("Internal operations ticket", {ticket.title for ticket in query_results})
+
     def test_ticket_list_ignores_blank_search_and_tag_filters(self) -> None:
         baseline = list_visible_tickets(self.session, self.reporter)
         filtered = list_visible_tickets(self.session, self.reporter, query="   ", tag="   ")

@@ -171,7 +171,7 @@ def list_visible_tickets(
     if tag:
         normalized_tag = tag.strip().lower()
         if normalized_tag:
-            tickets = [ticket for ticket in tickets if normalized_tag in ticket.tags]
+            tickets = [ticket for ticket in tickets if normalized_tag in {tag_value.lower() for tag_value in ticket.tags}]
     if query:
         normalized_query = query.strip().lower()
         if normalized_query:
@@ -180,7 +180,7 @@ def list_visible_tickets(
                 for ticket in tickets
                 if normalized_query in ticket.title.lower()
                 or normalized_query in ticket.description.lower()
-                or any(normalized_query in tag_value for tag_value in ticket.tags)
+                or any(normalized_query in tag_value.lower() for tag_value in ticket.tags)
             ]
     if offset:
         tickets = tickets[offset:]
