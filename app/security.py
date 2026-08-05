@@ -27,6 +27,9 @@ def create_access_token(subject: str) -> str:
 def decode_access_token(token: str) -> str:
     try:
         payload = jwt.decode(token, settings.secret_key, algorithms=[ALGORITHM])
-        return str(payload["sub"])
+        subject = payload["sub"]
+        if not isinstance(subject, str) or not subject.strip():
+            raise KeyError("Invalid subject")
+        return subject
     except (JWTError, KeyError) as exc:
         raise ValueError("Invalid token") from exc
