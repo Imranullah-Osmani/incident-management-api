@@ -15,6 +15,8 @@ This project includes lightweight operational notes to show how the API would be
 - `/health/live` confirms the FastAPI process is running
 - `/health/ready` checks database connectivity, Redis connectivity, and reports worker mode
 
+`/health/live` should stay lightweight and only prove that the process can respond. `/health/ready` is the traffic-gating check: it returns HTTP `200` when the database and Redis are ready, and HTTP `503` with `"status": "degraded"` when a required dependency is unavailable. Docker, load balancers, and uptime monitors should treat that `503` as "do not route traffic yet" rather than as an application crash.
+
 ## Docker health checks
 
 Docker Compose now checks:

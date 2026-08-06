@@ -25,6 +25,16 @@ curl -s http://localhost:8002/health/ready
 ```
 
 The readiness response reports database and Redis status plus the worker mode.
+It returns HTTP `200` only when required dependencies are ready; if the database or Redis check fails, the API returns HTTP `503` with a degraded payload similar to:
+
+```json
+{
+  "status": "degraded",
+  "database": "ok",
+  "redis": "error",
+  "worker_mode": "brokered"
+}
+```
 
 ## 3. Create an incident ticket
 

@@ -35,7 +35,7 @@ Open:
 
 - `http://localhost:8002/` for the browser landing page
 - `http://localhost:8002/docs` for Swagger docs
-- `http://localhost:8002/health/ready` for readiness status
+- `http://localhost:8002/health/ready` for readiness status; degraded dependencies return HTTP `503`
 - Docker Compose health checks cover the API, Redis, and optional PostgreSQL services
 
 ### Tests
@@ -66,7 +66,7 @@ Demo credentials:
 - `POST /tickets` creates a new support or incident ticket
 - `PATCH /tickets/{ticket_id}/status` updates lifecycle state and writes a timeline event
 - `DELETE /tickets/{ticket_id}/assign` returns a visible incident to the unassigned queue
-- `GET /health/ready` reports database and Redis readiness
+- `GET /health/ready` reports database and Redis readiness and returns `503` when degraded
 
 See [docs/api-examples.md](docs/api-examples.md) for curl examples covering login, readiness, ticket creation, status changes, assignment, and role visibility.
 
