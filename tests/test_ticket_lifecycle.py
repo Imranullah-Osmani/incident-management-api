@@ -160,6 +160,21 @@ class TicketLifecycleTests(unittest.TestCase):
 
         self.assertEqual(context.exception.status_code, 400)
 
+    def test_reporter_cannot_set_initial_assignment(self) -> None:
+        with self.assertRaises(HTTPException) as context:
+            create_ticket(
+                TicketCreate(
+                    title="Reporter assigned ticket",
+                    description="Reporter accounts can open incidents but cannot assign operational ownership.",
+                    visibility=TicketVisibility.internal,
+                    assigned_to_id=self.agent.id,
+                ),
+                session=self.session,
+                current_user=self.reporter,
+            )
+
+        self.assertEqual(context.exception.status_code, 403)
+
     def test_ticket_creation_allows_initial_agent_assignment(self) -> None:
         ticket = create_ticket(
             TicketCreate(

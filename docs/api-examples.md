@@ -51,6 +51,8 @@ curl -s -X POST http://localhost:8002/tickets \
   }'
 ```
 
+Reporters can create tickets, but only `admin` and `agent` users can set `assigned_to_id` during creation.
+
 ## 4. List visible tickets
 
 ```bash

@@ -341,6 +341,7 @@ def create_ticket(
     current_user: User = Depends(get_current_user),
 ):
     if payload.assigned_to_id:
+        ensure_agent_or_admin(current_user)
         get_assignable_user(session, payload.assigned_to_id)
 
     ticket = Ticket(
