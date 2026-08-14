@@ -61,7 +61,7 @@ curl -s "http://localhost:8002/tickets?visibility=internal&limit=25&offset=0" \
 ```
 
 Admins see all tickets. Agents see operational tickets except restricted tickets assigned elsewhere. Reporters see only their own tickets.
-Use `visibility`, `status`, `priority`, `tag`, `assigned_to`, `q`, `limit`, and `offset` for browser or dashboard filtering after RBAC visibility rules are applied. The summary endpoint accepts the same visibility-safe filters, for example `GET /tickets/summary?visibility=internal&status=investigating&priority=high`.
+Use `visibility`, `status`, `priority`, `tag`, `assigned_to`, `q`, `limit`, and `offset` for browser or dashboard filtering after RBAC visibility rules are applied. Text filters are capped at 100 characters to keep dashboard requests bounded. The summary endpoint accepts the same visibility-safe filters, for example `GET /tickets/summary?visibility=internal&status=investigating&priority=high`.
 
 ## 5. Move a ticket through the lifecycle
 

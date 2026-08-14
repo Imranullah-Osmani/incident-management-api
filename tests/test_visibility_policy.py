@@ -263,6 +263,20 @@ class VisibilityPolicyTests(unittest.TestCase):
         self.assertEqual(limit_context.exception.status_code, 400)
         self.assertEqual(offset_context.exception.status_code, 400)
 
+    def test_ticket_list_rejects_oversized_text_filters(self) -> None:
+        oversized_filter = "x" * 101
+
+        with self.assertRaises(HTTPException) as query_context:
+            list_visible_tickets(self.session, self.admin, query=oversized_filter)
+        with self.assertRaises(HTTPException) as tag_context:
+            list_visible_tickets(self.session, self.admin, tag=oversized_filter)
+        with self.assertRaises(HTTPException) as assignee_context:
+            list_visible_tickets(self.session, self.admin, assigned_to=oversized_filter)
+
+        self.assertEqual(query_context.exception.status_code, 400)
+        self.assertEqual(tag_context.exception.status_code, 400)
+        self.assertEqual(assignee_context.exception.status_code, 400)
+
     def test_inactive_user_cannot_login(self) -> None:
         self.reporter.is_active = False
         self.session.commit()

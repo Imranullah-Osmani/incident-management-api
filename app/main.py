@@ -47,6 +47,7 @@ ALLOWED_STATUS_TRANSITIONS = {
 }
 SUPPORTED_PRIORITIES = {"low", "medium", "high", "critical"}
 PRIORITY_ORDER = ("low", "medium", "high", "critical")
+MAX_FILTER_LENGTH = 100
 
 
 def get_db():
@@ -130,6 +131,18 @@ def get_visible_ticket(session: Session, user: User, ticket_id: str) -> Ticket:
     return ticket
 
 
+def normalize_text_filter(value: str | None, field_name: str, max_length: int = MAX_FILTER_LENGTH) -> str:
+    if not value:
+        return ""
+    normalized = value.strip()
+    if len(normalized) > max_length:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"{field_name} filter must be {max_length} characters or fewer.",
+        )
+    return normalized
+
+
 def list_visible_tickets(
     session: Session,
     user: User,
@@ -158,22 +171,23 @@ def list_visible_tickets(
     if visibility:
         statement = statement.where(Ticket.visibility == visibility)
     if assigned_to:
-        normalized_assignee = assigned_to.strip().lower()
+        assigned_to_filter = normalize_text_filter(assigned_to, "assigned_to")
+        normalized_assignee = assigned_to_filter.lower()
         if normalized_assignee:
             if normalized_assignee == "me":
                 statement = statement.where(Ticket.assigned_to_id == user.id)
             elif normalized_assignee == "unassigned":
                 statement = statement.where(Ticket.assigned_to_id.is_(None))
             else:
-                statement = statement.where(Ticket.assigned_to_id == assigned_to.strip())
+                statement = statement.where(Ticket.assigned_to_id == assigned_to_filter)
 
     tickets = list(session.scalars(statement))
     if tag:
-        normalized_tag = tag.strip().lower()
+        normalized_tag = normalize_text_filter(tag, "tag").lower()
         if normalized_tag:
             tickets = [ticket for ticket in tickets if normalized_tag in {tag_value.lower() for tag_value in ticket.tags}]
     if query:
-        normalized_query = query.strip().lower()
+        normalized_query = normalize_text_filter(query, "q").lower()
         if normalized_query:
             tickets = [
                 ticket
