@@ -48,6 +48,7 @@ ALLOWED_STATUS_TRANSITIONS = {
 SUPPORTED_PRIORITIES = {"low", "medium", "high", "critical"}
 PRIORITY_ORDER = ("low", "medium", "high", "critical")
 MAX_FILTER_LENGTH = 100
+REDIS_HEALTH_TIMEOUT_SECONDS = 0.35
 
 
 def get_db():
@@ -474,7 +475,11 @@ def ready_health(response: Response, session: Session = Depends(get_db)) -> Heal
 
     redis_client = None
     try:
-        redis_client = Redis.from_url(settings.redis_url)
+        redis_client = Redis.from_url(
+            settings.redis_url,
+            socket_connect_timeout=REDIS_HEALTH_TIMEOUT_SECONDS,
+            socket_timeout=REDIS_HEALTH_TIMEOUT_SECONDS,
+        )
         redis_client.ping()
         redis_status = "ok"
     except Exception:

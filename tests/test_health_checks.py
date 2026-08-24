@@ -5,7 +5,8 @@ from unittest.mock import MagicMock, patch
 
 from fastapi import Response
 
-from app.main import ready_health
+from app.core.config import settings
+from app.main import REDIS_HEALTH_TIMEOUT_SECONDS, ready_health
 
 
 class HealthCheckTests(unittest.TestCase):
@@ -14,10 +15,15 @@ class HealthCheckTests(unittest.TestCase):
         fastapi_response = Response()
         redis_client = MagicMock()
 
-        with patch("app.main.Redis.from_url", return_value=redis_client):
+        with patch("app.main.Redis.from_url", return_value=redis_client) as redis_from_url:
             response = ready_health(response=fastapi_response, session=session)
 
         session.execute.assert_called_once()
+        redis_from_url.assert_called_once_with(
+            settings.redis_url,
+            socket_connect_timeout=REDIS_HEALTH_TIMEOUT_SECONDS,
+            socket_timeout=REDIS_HEALTH_TIMEOUT_SECONDS,
+        )
         redis_client.ping.assert_called_once()
         redis_client.close.assert_called_once()
         self.assertEqual(fastapi_response.status_code, 200)
