@@ -224,6 +224,20 @@ class TicketLifecycleTests(unittest.TestCase):
 
         self.assertIsNone(ticket.assigned_to_id)
 
+    def test_reporter_cannot_create_restricted_ticket(self) -> None:
+        with self.assertRaises(HTTPException) as context:
+            create_ticket(
+                TicketCreate(
+                    title="Restricted reporter attempt",
+                    description="Reporter-created restricted incidents would hide operational context.",
+                    visibility=TicketVisibility.restricted,
+                ),
+                session=self.session,
+                current_user=self.reporter,
+            )
+
+        self.assertEqual(context.exception.status_code, 403)
+
     def test_agent_can_update_status_and_append_timeline_event(self) -> None:
         ticket = create_ticket(
             TicketCreate(
@@ -360,7 +374,7 @@ class TicketLifecycleTests(unittest.TestCase):
                 visibility=TicketVisibility.restricted,
             ),
             session=self.session,
-            current_user=self.reporter,
+            current_user=self.admin,
         )
 
         with self.assertRaises(HTTPException) as context:
