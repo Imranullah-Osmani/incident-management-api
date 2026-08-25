@@ -4,6 +4,14 @@ const state = {
 };
 
 async function fetchJson(url, options = {}) {
+  const result = await fetchJsonWithStatus(url, options);
+  if (!result.ok) {
+    throw new Error(JSON.stringify(result.data, null, 2));
+  }
+  return result.data;
+}
+
+async function fetchJsonWithStatus(url, options = {}) {
   const headers = { ...(options.headers || {}) };
   if (state.token) {
     headers.Authorization = `Bearer ${state.token}`;
@@ -11,10 +19,7 @@ async function fetchJson(url, options = {}) {
 
   const response = await fetch(url, { ...options, headers });
   const data = await response.json();
-  if (!response.ok) {
-    throw new Error(JSON.stringify(data, null, 2));
-  }
-  return data;
+  return { data, ok: response.ok, status: response.status };
 }
 
 function setPreview(id, payload) {
@@ -91,7 +96,9 @@ function buildTicketQuery() {
 
 async function loadHealth() {
   try {
-    setPreview("health-preview", await fetchJson("/health/ready"));
+    const result = await fetchJsonWithStatus("/health/ready");
+    const label = result.ok ? "Readiness check passed" : `Readiness check returned HTTP ${result.status}`;
+    setPreview("health-preview", `${label}\n\n${JSON.stringify(result.data, null, 2)}`);
   } catch (error) {
     setPreview("health-preview", `Failed to load health:\n${error.message}`);
   }
