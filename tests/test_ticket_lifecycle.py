@@ -94,6 +94,13 @@ class TicketLifecycleTests(unittest.TestCase):
                 tags=["x" * 41],
             )
 
+    def test_ticket_creation_rejects_oversized_description(self) -> None:
+        with self.assertRaises(ValidationError):
+            TicketCreate(
+                title="Large incident detail",
+                description="x" * 2001,
+            )
+
     def test_ticket_creation_strips_title_and_description(self) -> None:
         ticket = create_ticket(
             TicketCreate(

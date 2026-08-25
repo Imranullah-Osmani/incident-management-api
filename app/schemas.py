@@ -29,7 +29,7 @@ class UserResponse(BaseModel):
 
 class TicketCreate(BaseModel):
     title: str = Field(min_length=5, max_length=200)
-    description: str = Field(min_length=10)
+    description: str = Field(min_length=10, max_length=2000)
     priority: Literal["low", "medium", "high", "critical"] = "medium"
     visibility: TicketVisibility = TicketVisibility.internal
     tags: list[str] = Field(default_factory=list, max_length=10)
