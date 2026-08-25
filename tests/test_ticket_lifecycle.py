@@ -387,6 +387,29 @@ class TicketLifecycleTests(unittest.TestCase):
 
         self.assertEqual(context.exception.status_code, 400)
 
+    def test_restricted_ticket_assignment_requires_admin(self) -> None:
+        ticket = create_ticket(
+            TicketCreate(
+                title="Restricted assignment guard",
+                description="Sensitive incidents should not be reassigned by non-admin operators.",
+                visibility=TicketVisibility.restricted,
+                assigned_to_id=self.agent.id,
+            ),
+            session=self.session,
+            current_user=self.admin,
+        )
+
+        with self.assertRaises(HTTPException) as context:
+            assign_ticket(
+                ticket.id,
+                TicketAssign(assigned_to_id=self.admin.id, message="Escalate ownership."),
+                session=self.session,
+                current_user=self.agent,
+            )
+
+        self.assertEqual(context.exception.status_code, 403)
+        self.assertIn("Restricted tickets require admin assignment", context.exception.detail)
+
     def test_admin_can_assign_ticket_to_agent(self) -> None:
         ticket = create_ticket(
             TicketCreate(

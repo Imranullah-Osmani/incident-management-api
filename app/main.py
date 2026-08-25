@@ -435,6 +435,8 @@ def assign_ticket(
     ensure_agent_or_admin(current_user)
     ticket = get_visible_ticket(session, current_user, ticket_id)
     ensure_ticket_accepts_assignment(ticket)
+    if ticket.visibility == TicketVisibility.restricted and current_user.role != UserRole.admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Restricted tickets require admin assignment.")
     get_assignable_user(session, payload.assigned_to_id)
     if ticket.assigned_to_id == payload.assigned_to_id:
         return get_visible_ticket(session, current_user, ticket.id)
