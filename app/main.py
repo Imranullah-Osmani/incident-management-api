@@ -181,6 +181,8 @@ def list_visible_tickets(
                 statement = statement.where(Ticket.assigned_to_id.is_(None))
             elif "@" in normalized_assignee:
                 assignee_id = session.scalar(select(User.id).where(func.lower(User.email) == normalized_assignee))
+                if assignee_id is None:
+                    return []
                 statement = statement.where(Ticket.assigned_to_id == assignee_id)
             else:
                 statement = statement.where(Ticket.assigned_to_id == assigned_to_filter)

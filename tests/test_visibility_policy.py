@@ -178,6 +178,11 @@ class VisibilityPolicyTests(unittest.TestCase):
         self.assertEqual({ticket.title for ticket in explicit_owner}, {"Assigned restricted ticket"})
         self.assertEqual({ticket.title for ticket in email_owner}, {"Assigned restricted ticket"})
 
+    def test_ticket_list_returns_empty_for_unknown_assignee_email(self) -> None:
+        tickets = list_visible_tickets(self.session, self.admin, assigned_to="missing@example.com")
+
+        self.assertEqual(tickets, [])
+
     def test_ticket_list_ignores_blank_assignment_filter(self) -> None:
         baseline = list_visible_tickets(self.session, self.agent)
         filtered = list_visible_tickets(self.session, self.agent, assigned_to="   ")
