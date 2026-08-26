@@ -279,6 +279,11 @@ def ensure_ticket_accepts_assignment(ticket: Ticket) -> None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Closed tickets cannot be reassigned.")
 
 
+def ensure_ticket_assignment_admin_boundary(ticket: Ticket, user: User) -> None:
+    if ticket.visibility == TicketVisibility.restricted and user.role != UserRole.admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Restricted tickets require admin assignment.")
+
+
 def enqueue_notification(event_type: str, ticket_id: str, recipient: str | None = None) -> None:
     broker = urlparse(settings.redis_url)
     host = broker.hostname
@@ -437,8 +442,7 @@ def assign_ticket(
     ensure_agent_or_admin(current_user)
     ticket = get_visible_ticket(session, current_user, ticket_id)
     ensure_ticket_accepts_assignment(ticket)
-    if ticket.visibility == TicketVisibility.restricted and current_user.role != UserRole.admin:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Restricted tickets require admin assignment.")
+    ensure_ticket_assignment_admin_boundary(ticket, current_user)
     get_assignable_user(session, payload.assigned_to_id)
     if ticket.assigned_to_id == payload.assigned_to_id:
         return get_visible_ticket(session, current_user, ticket.id)
@@ -459,6 +463,7 @@ def unassign_ticket(
     ensure_agent_or_admin(current_user)
     ticket = get_visible_ticket(session, current_user, ticket_id)
     ensure_ticket_accepts_assignment(ticket)
+    ensure_ticket_assignment_admin_boundary(ticket, current_user)
     if ticket.assigned_to_id is None:
         return get_visible_ticket(session, current_user, ticket.id)
     previous_assignee = ticket.assigned_to_id

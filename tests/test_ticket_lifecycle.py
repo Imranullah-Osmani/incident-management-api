@@ -562,6 +562,24 @@ class TicketLifecycleTests(unittest.TestCase):
         self.assertEqual(context.exception.status_code, 400)
         self.assertIn("Closed tickets cannot be reassigned", context.exception.detail)
 
+    def test_restricted_ticket_unassignment_requires_admin(self) -> None:
+        ticket = create_ticket(
+            TicketCreate(
+                title="Restricted unassignment guard",
+                description="Sensitive incidents should not have ownership cleared by non-admin operators.",
+                visibility=TicketVisibility.restricted,
+                assigned_to_id=self.agent.id,
+            ),
+            session=self.session,
+            current_user=self.admin,
+        )
+
+        with self.assertRaises(HTTPException) as context:
+            unassign_ticket(ticket.id, session=self.session, current_user=self.agent)
+
+        self.assertEqual(context.exception.status_code, 403)
+        self.assertIn("Restricted tickets require admin assignment", context.exception.detail)
+
     def test_timeline_messages_are_stripped_and_validated(self) -> None:
         update = TicketStatusUpdate(status=TicketStatus.acknowledged, message="  Acknowledged by support.  ")
         assignment = TicketAssign(assigned_to_id=self.agent.id, message="  Assigned to agent.  ")
