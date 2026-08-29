@@ -15,7 +15,7 @@ from sqlalchemy import select
 from app.database import Base, SessionLocal, engine
 from app.main import assign_ticket, create_ticket, unassign_ticket, update_ticket_status
 from app.models import TicketEvent, TicketStatus, TicketVisibility, User, UserRole
-from app.schemas import TicketAssign, TicketCreate, TicketStatusUpdate
+from app.schemas import TicketAssign, TicketCreate, TicketEventResponse, TicketStatusUpdate
 from app.security import hash_password
 
 
@@ -373,6 +373,14 @@ class TicketLifecycleTests(unittest.TestCase):
             [event.event_type for event in assigned.events],
             ["ticket_created", "status_changed", "assignment_changed"],
         )
+
+        self.assertEqual(
+            [event.actor_id for event in assigned.events],
+            [self.reporter.id, self.agent.id, self.admin.id],
+        )
+        serialized_event = TicketEventResponse.model_validate(assigned.events[-1])
+        self.assertEqual(serialized_event.actor_id, self.admin.id)
+
     def test_assignment_requires_agent_or_admin_assignee(self) -> None:
         ticket = create_ticket(
             TicketCreate(

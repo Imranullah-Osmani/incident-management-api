@@ -94,6 +94,7 @@ class TicketAssign(BaseModel):
 
 class TicketEventResponse(BaseModel):
     id: int
+    actor_id: str | None = None
     event_type: str
     message: str
     previous_value: str | None = None

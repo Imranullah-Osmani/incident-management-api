@@ -72,7 +72,7 @@ curl -s -X PATCH http://localhost:8002/tickets/<ticket-id>/status \
   -d '{"status":"investigating","message":"Agent started the incident investigation."}'
 ```
 
-The status change appends a timeline event and queues a notification when Redis/Celery is available.
+The status change appends a timeline event and queues a notification when Redis/Celery is available. Ticket detail responses include each timeline event's `actor_id`, previous value, new value, message, and timestamp so dashboards can show who changed the incident.
 
 ## 6. Assign operational ownership
 
