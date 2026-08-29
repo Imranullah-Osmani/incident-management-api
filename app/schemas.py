@@ -33,7 +33,7 @@ class TicketCreate(BaseModel):
     priority: Literal["low", "medium", "high", "critical"] = "medium"
     visibility: TicketVisibility = TicketVisibility.internal
     tags: list[str] = Field(default_factory=list, max_length=10)
-    assigned_to_id: str | None = None
+    assigned_to_id: str | None = Field(default=None, max_length=36)
 
     @field_validator("title", "description", mode="before")
     @classmethod
@@ -78,7 +78,7 @@ class TicketStatusUpdate(BaseModel):
 
 
 class TicketAssign(BaseModel):
-    assigned_to_id: str = Field(min_length=1)
+    assigned_to_id: str = Field(min_length=1, max_length=36)
     message: str = Field(default="Ticket assignment updated", min_length=3, max_length=255)
 
     @field_validator("assigned_to_id", mode="before")

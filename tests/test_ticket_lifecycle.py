@@ -210,6 +210,14 @@ class TicketLifecycleTests(unittest.TestCase):
 
         self.assertEqual(ticket.assigned_to_id, self.agent.id)
 
+    def test_ticket_creation_rejects_oversized_initial_assignee_id(self) -> None:
+        with self.assertRaises(ValidationError):
+            TicketCreate(
+                title="Oversized assignee",
+                description="Assignee identifiers should stay bounded before database lookup.",
+                assigned_to_id="x" * 37,
+            )
+
     def test_ticket_creation_treats_blank_initial_assignee_as_unassigned(self) -> None:
         ticket = create_ticket(
             TicketCreate(
@@ -365,7 +373,6 @@ class TicketLifecycleTests(unittest.TestCase):
             [event.event_type for event in assigned.events],
             ["ticket_created", "status_changed", "assignment_changed"],
         )
-
     def test_assignment_requires_agent_or_admin_assignee(self) -> None:
         ticket = create_ticket(
             TicketCreate(
@@ -438,6 +445,10 @@ class TicketLifecycleTests(unittest.TestCase):
 
         self.assertEqual(payload.assigned_to_id, self.agent.id)
         self.assertEqual(payload.message, "Assigned to agent.")
+
+    def test_assignment_payload_rejects_oversized_assignee_id(self) -> None:
+        with self.assertRaises(ValidationError):
+            TicketAssign(assigned_to_id="x" * 37, message="Assigned to agent.")
 
     def test_assignment_payload_rejects_blank_assignee_id(self) -> None:
         with self.assertRaises(ValidationError):
