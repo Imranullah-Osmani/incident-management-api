@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 from jose import jwt
 
 from app.core.config import settings
+from app.schemas import LoginRequest
 from app.security import ALGORITHM, create_access_token, decode_access_token
 
 
@@ -34,6 +35,13 @@ class TokenSecurityTests(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             decode_access_token(token)
+
+    def test_login_request_bounds_password_length(self) -> None:
+        with self.assertRaises(ValueError):
+            LoginRequest(email="admin@example.com", password="short")
+
+        with self.assertRaises(ValueError):
+            LoginRequest(email="admin@example.com", password="x" * 129)
 
 
 if __name__ == "__main__":
