@@ -189,6 +189,13 @@ class VisibilityPolicyTests(unittest.TestCase):
 
         self.assertEqual(tickets, [])
 
+    def test_ticket_list_rejects_oversized_assignee_identifier_filter(self) -> None:
+        with self.assertRaises(HTTPException) as context:
+            list_visible_tickets(self.session, self.admin, assigned_to="x" * 37)
+
+        self.assertEqual(context.exception.status_code, 400)
+        self.assertIn("assigned_to must be 36 characters or fewer", context.exception.detail)
+
     def test_ticket_list_ignores_blank_assignment_filter(self) -> None:
         baseline = list_visible_tickets(self.session, self.agent)
         filtered = list_visible_tickets(self.session, self.agent, assigned_to="   ")

@@ -197,7 +197,7 @@ def list_visible_tickets(
                     return []
                 statement = statement.where(Ticket.assigned_to_id == assignee_id)
             else:
-                statement = statement.where(Ticket.assigned_to_id == assigned_to_filter)
+                statement = statement.where(Ticket.assigned_to_id == normalize_identifier(assigned_to_filter, "assigned_to"))
 
     tickets = list(session.scalars(statement))
     if tag:
