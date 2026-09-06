@@ -177,9 +177,10 @@ def list_visible_tickets(
         statement = statement.where(Ticket.status == status_filter)
     if priority:
         normalized_priority = priority.strip().lower()
-        if normalized_priority not in SUPPORTED_PRIORITIES:
+        if normalized_priority and normalized_priority not in SUPPORTED_PRIORITIES:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported ticket priority filter.")
-        statement = statement.where(Ticket.priority == normalized_priority)
+        if normalized_priority:
+            statement = statement.where(Ticket.priority == normalized_priority)
     if visibility:
         statement = statement.where(Ticket.visibility == visibility)
     if assigned_to:

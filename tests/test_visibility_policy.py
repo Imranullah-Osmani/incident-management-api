@@ -167,6 +167,12 @@ class VisibilityPolicyTests(unittest.TestCase):
 
         self.assertEqual(context.exception.status_code, 400)
 
+    def test_ticket_list_ignores_blank_priority_filter(self) -> None:
+        baseline = list_visible_tickets(self.session, self.admin)
+        filtered = list_visible_tickets(self.session, self.admin, priority="   ")
+
+        self.assertEqual([ticket.id for ticket in filtered], [ticket.id for ticket in baseline])
+
     def test_ticket_list_filters_by_assignment_owner(self) -> None:
         own_queue = list_visible_tickets(self.session, self.agent, assigned_to="me")
         unassigned = list_visible_tickets(self.session, self.admin, assigned_to="unassigned")
