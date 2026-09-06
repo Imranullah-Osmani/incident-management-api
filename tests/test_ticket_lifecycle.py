@@ -196,6 +196,23 @@ class TicketLifecycleTests(unittest.TestCase):
 
         self.assertEqual(ticket.assigned_to_id, self.agent.id)
 
+    def test_ticket_creation_records_initial_assignment_timeline_event(self) -> None:
+        ticket = create_ticket(
+            TicketCreate(
+                title="Preassigned escalation audit",
+                description="Initial ownership should be visible in the ticket timeline.",
+                visibility=TicketVisibility.internal,
+                assigned_to_id=self.agent.id,
+            ),
+            session=self.session,
+            current_user=self.admin,
+        )
+
+        self.assertEqual(
+            [(event.event_type, event.new_value) for event in ticket.events],
+            [("ticket_created", None), ("assignment_changed", self.agent.id)],
+        )
+
     def test_ticket_creation_strips_initial_assignee_id(self) -> None:
         ticket = create_ticket(
             TicketCreate(
@@ -483,8 +500,10 @@ class TicketLifecycleTests(unittest.TestCase):
 
         events = self.session.scalars(select(TicketEvent).where(TicketEvent.ticket_id == ticket.id)).all()
         self.assertEqual(unchanged.assigned_to_id, self.agent.id)
-        self.assertEqual(len(events), 1)
-        self.assertEqual(events[0].event_type, "ticket_created")
+        self.assertEqual(
+            [event.event_type for event in events],
+            ["ticket_created", "assignment_changed"],
+        )
 
     def test_admin_can_remove_ticket_assignment(self) -> None:
         ticket = create_ticket(

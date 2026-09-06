@@ -395,6 +395,8 @@ def create_ticket(
     session.add(ticket)
     session.flush()
     append_event(session, ticket, current_user, "ticket_created", "Ticket created")
+    if payload.assigned_to_id:
+        append_event(session, ticket, current_user, "assignment_changed", "Ticket initially assigned", None, payload.assigned_to_id)
     session.commit()
     session.refresh(ticket)
     enqueue_notification("ticket_created", ticket.id, None)
