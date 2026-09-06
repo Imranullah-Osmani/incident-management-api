@@ -401,6 +401,8 @@ def create_ticket(
     session.commit()
     session.refresh(ticket)
     enqueue_notification("ticket_created", ticket.id, None)
+    if payload.assigned_to_id:
+        enqueue_notification("assignment_changed", ticket.id, payload.assigned_to_id)
     return ticket
 
 

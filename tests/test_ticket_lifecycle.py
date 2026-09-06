@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import unittest
+from unittest.mock import patch
 
 from pydantic import ValidationError
 
@@ -212,6 +213,22 @@ class TicketLifecycleTests(unittest.TestCase):
             [(event.event_type, event.new_value) for event in ticket.events],
             [("ticket_created", None), ("assignment_changed", self.agent.id)],
         )
+
+    def test_ticket_creation_notifies_initial_assignment_owner(self) -> None:
+        with patch("app.main.enqueue_notification") as enqueue:
+            ticket = create_ticket(
+                TicketCreate(
+                    title="Preassigned escalation notification",
+                    description="The assigned owner should receive an assignment notification.",
+                    visibility=TicketVisibility.internal,
+                    assigned_to_id=self.agent.id,
+                ),
+                session=self.session,
+                current_user=self.admin,
+            )
+
+        enqueue.assert_any_call("ticket_created", ticket.id, None)
+        enqueue.assert_any_call("assignment_changed", ticket.id, self.agent.id)
 
     def test_ticket_creation_strips_initial_assignee_id(self) -> None:
         ticket = create_ticket(
