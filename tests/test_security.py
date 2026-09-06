@@ -43,6 +43,11 @@ class TokenSecurityTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             LoginRequest(email="admin@example.com", password="x" * 129)
 
+    def test_login_request_normalizes_email(self) -> None:
+        payload = LoginRequest(email="  ADMIN@EXAMPLE.COM  ", password="ChangeMe123!")
+
+        self.assertEqual(payload.email, "admin@example.com")
+
 
 if __name__ == "__main__":
     unittest.main()
