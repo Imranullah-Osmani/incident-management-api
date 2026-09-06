@@ -48,6 +48,7 @@ ALLOWED_STATUS_TRANSITIONS = {
 SUPPORTED_PRIORITIES = {"low", "medium", "high", "critical"}
 PRIORITY_ORDER = ("low", "medium", "high", "critical")
 MAX_FILTER_LENGTH = 100
+MAX_IDENTIFIER_LENGTH = 36
 REDIS_HEALTH_TIMEOUT_SECONDS = 0.35
 
 
@@ -126,10 +127,20 @@ def visible_ticket_query(session: Session, user: User):
 
 
 def get_visible_ticket(session: Session, user: User, ticket_id: str) -> Ticket:
-    ticket = session.scalar(visible_ticket_query(session, user).where(Ticket.id == ticket_id))
+    normalized_ticket_id = normalize_identifier(ticket_id, "ticket_id")
+    ticket = session.scalar(visible_ticket_query(session, user).where(Ticket.id == normalized_ticket_id))
     if not ticket:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found.")
     return ticket
+
+
+def normalize_identifier(value: str, field_name: str, max_length: int = MAX_IDENTIFIER_LENGTH) -> str:
+    normalized = value.strip()
+    if not normalized:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{field_name} is required.")
+    if len(normalized) > max_length:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{field_name} must be {max_length} characters or fewer.")
+    return normalized
 
 
 def normalize_text_filter(value: str | None, field_name: str, max_length: int = MAX_FILTER_LENGTH) -> str:
@@ -258,7 +269,8 @@ def append_event(
 
 
 def get_assignable_user(session: Session, assigned_to_id: str) -> User:
-    assignee = session.scalar(select(User).where(User.id == assigned_to_id))
+    normalized_assignee_id = normalize_identifier(assigned_to_id, "assigned_to_id")
+    assignee = session.scalar(select(User).where(User.id == normalized_assignee_id))
     if not assignee or not assignee.is_active or assignee.role not in {UserRole.admin, UserRole.agent}:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Assigned user must be an active agent or admin.")
     return assignee

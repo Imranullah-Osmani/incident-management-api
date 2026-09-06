@@ -11,7 +11,7 @@ os.environ["CELERY_TASK_ALWAYS_EAGER"] = "True"
 from fastapi import HTTPException
 
 from app.database import Base, SessionLocal, engine
-from app.main import demo_users, ensure_agent_or_admin, enqueue_notification, list_visible_tickets, login, summarize_visible_tickets, visible_ticket_query
+from app.main import demo_users, ensure_agent_or_admin, enqueue_notification, get_visible_ticket, list_visible_tickets, login, summarize_visible_tickets, visible_ticket_query
 from app.models import Ticket, TicketStatus, TicketVisibility, User, UserRole
 from app.schemas import LoginRequest
 from app.security import hash_password
@@ -283,6 +283,13 @@ class VisibilityPolicyTests(unittest.TestCase):
         self.assertEqual(query_context.exception.status_code, 400)
         self.assertEqual(tag_context.exception.status_code, 400)
         self.assertEqual(assignee_context.exception.status_code, 400)
+
+    def test_ticket_detail_rejects_oversized_identifier_before_lookup(self) -> None:
+        with self.assertRaises(HTTPException) as context:
+            get_visible_ticket(self.session, self.admin, "x" * 37)
+
+        self.assertEqual(context.exception.status_code, 400)
+        self.assertIn("ticket_id must be 36 characters or fewer", context.exception.detail)
 
     def test_inactive_user_cannot_login(self) -> None:
         self.reporter.is_active = False
