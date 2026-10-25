@@ -1,19 +1,15 @@
 from __future__ import annotations
 
-import os
 import unittest
 from unittest.mock import patch
 
 from pydantic import ValidationError
 
-os.environ["DATABASE_URL"] = "sqlite:///./data/test_incidents_lifecycle.db"
-os.environ["REDIS_URL"] = "redis://127.0.0.1:6390/0"
-os.environ["CELERY_TASK_ALWAYS_EAGER"] = "True"
-
 from fastapi import HTTPException
-from sqlalchemy import select
+from sqlalchemy import create_engine, select
+from sqlalchemy.orm import Session
 
-from app.database import Base, SessionLocal, engine
+from app.database import Base
 from app.main import assign_ticket, create_ticket, unassign_ticket, update_ticket_status
 from app.models import TicketEvent, TicketStatus, TicketVisibility, User, UserRole
 from app.schemas import TicketAssign, TicketCreate, TicketEventResponse, TicketStatusUpdate
@@ -22,18 +18,16 @@ from app.security import hash_password
 
 class TicketLifecycleTests(unittest.TestCase):
     def setUp(self) -> None:
-        Base.metadata.drop_all(bind=engine)
-        Base.metadata.create_all(bind=engine)
-        self.session = SessionLocal()
+        self.engine = create_engine("sqlite://")
+        self.addCleanup(self.engine.dispose)
+        Base.metadata.create_all(bind=self.engine)
+        self.session = Session(self.engine, autoflush=False)
+        self.addCleanup(self.session.close)
+        self.enterContext(patch("app.main.enqueue_notification"))
 
         self.admin = self.create_user("admin@example.com", UserRole.admin)
         self.agent = self.create_user("agent@example.com", UserRole.agent)
         self.reporter = self.create_user("reporter@example.com", UserRole.reporter)
-
-    def tearDown(self) -> None:
-        self.session.close()
-        Base.metadata.drop_all(bind=engine)
-        engine.dispose()
 
     def create_user(self, email: str, role: UserRole) -> User:
         user = User(

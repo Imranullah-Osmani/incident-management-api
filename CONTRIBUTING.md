@@ -27,6 +27,8 @@ Run the full local verification script before opening a pull request:
 
 The script validates Docker Compose configuration, compiles the application, runs incident tests, and verifies the recreated case-study sample.
 
+Database tests create independent in-memory SQLite engines, never the configured application database. Ticket tests mock notification dispatch; dispatch tests mock broker connections. The suite can run with an existing `.env` without changing local incident records or contacting Redis.
+
 ## Change Guidelines
 
 - Preserve role visibility boundaries for `admin`, `agent`, and `reporter`.

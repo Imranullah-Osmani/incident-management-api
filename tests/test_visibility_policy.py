@@ -1,16 +1,14 @@
 from __future__ import annotations
 
-import os
 import unittest
+from unittest.mock import patch
 
-
-os.environ["DATABASE_URL"] = "sqlite:///./data/test_incidents_policy.db"
-os.environ["REDIS_URL"] = "redis://127.0.0.1:6390/0"
-os.environ["CELERY_TASK_ALWAYS_EAGER"] = "True"
 
 from fastapi import HTTPException
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
 
-from app.database import Base, SessionLocal, engine
+from app.database import Base
 from app.main import demo_users, ensure_agent_or_admin, enqueue_notification, get_visible_ticket, list_visible_tickets, login, summarize_visible_tickets, visible_ticket_query
 from app.models import Ticket, TicketStatus, TicketVisibility, User, UserRole
 from app.schemas import LoginRequest
@@ -19,9 +17,12 @@ from app.security import hash_password
 
 class VisibilityPolicyTests(unittest.TestCase):
     def setUp(self) -> None:
-        Base.metadata.drop_all(bind=engine)
-        Base.metadata.create_all(bind=engine)
-        self.session = SessionLocal()
+        self.engine = create_engine("sqlite://")
+        self.addCleanup(self.engine.dispose)
+        Base.metadata.create_all(bind=self.engine)
+        self.session = Session(self.engine, autoflush=False)
+        self.addCleanup(self.session.close)
+        self.enterContext(patch("app.main.enqueue_notification"))
 
         self.admin = self.create_user("admin@example.com", UserRole.admin)
         self.agent = self.create_user("agent@example.com", UserRole.agent)
@@ -54,11 +55,6 @@ class VisibilityPolicyTests(unittest.TestCase):
             TicketVisibility.restricted,
             created_by_id=self.agent.id,
         )
-
-    def tearDown(self) -> None:
-        self.session.close()
-        Base.metadata.drop_all(bind=engine)
-        engine.dispose()
 
     def create_user(self, email: str, role: UserRole) -> User:
         user = User(
@@ -328,7 +324,9 @@ class VisibilityPolicyTests(unittest.TestCase):
         self.assertNotIn(self.reporter.email, {user.email for user in users})
 
     def test_notification_enqueue_degrades_without_redis(self) -> None:
-        enqueue_notification("ticket_created", self.public_ticket.id)
+        with patch("app.main.socket.create_connection", side_effect=OSError("broker unavailable")) as connect:
+            enqueue_notification("ticket_created", self.public_ticket.id)
+        connect.assert_called_once()
 
 
 if __name__ == "__main__":
