@@ -57,6 +57,8 @@ curl -s -X POST http://localhost:8002/tickets \
 
 Reporters can create tickets, but only `admin` and `agent` users can set `assigned_to_id` during creation.
 
+Restricted ticket ownership always requires an admin, including initial assignment during creation. Agents can create unassigned restricted tickets and request admin assignment later. Attempts to preassign a restricted ticket as an agent return HTTP 403 before a ticket or timeline event is written.
+
 ## 4. List visible tickets
 
 ```bash

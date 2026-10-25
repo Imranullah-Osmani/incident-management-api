@@ -453,6 +453,30 @@ class TicketLifecycleTests(unittest.TestCase):
         self.assertEqual(context.exception.status_code, 403)
         self.assertIn("Restricted tickets require admin assignment", context.exception.detail)
 
+    def test_agent_cannot_bypass_restricted_assignment_at_creation(self) -> None:
+        with self.assertRaises(HTTPException) as context:
+            create_ticket(
+                TicketCreate(
+                    title="Restricted initial assignment",
+                    description="The creation endpoint must enforce the same assignment boundary.",
+                    visibility=TicketVisibility.restricted,
+                    assigned_to_id=self.admin.id,
+                ), session=self.session, current_user=self.agent,
+            )
+
+        self.assertEqual(context.exception.status_code, 403)
+        self.assertEqual(list(self.session.scalars(select(TicketEvent))), [])
+
+    def test_agent_can_create_unassigned_restricted_ticket(self) -> None:
+        ticket = create_ticket(
+            TicketCreate(
+                title="Restricted triage request", description="An agent can request restricted triage without assigning an owner.",
+                visibility=TicketVisibility.restricted,
+            ), session=self.session, current_user=self.agent,
+        )
+        self.assertIsNone(ticket.assigned_to_id)
+        self.assertEqual(ticket.created_by_id, self.agent.id)
+
     def test_admin_can_assign_ticket_to_agent(self) -> None:
         ticket = create_ticket(
             TicketCreate(

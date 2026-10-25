@@ -378,6 +378,8 @@ def create_ticket(
         ensure_agent_or_admin(current_user)
     if payload.assigned_to_id:
         ensure_agent_or_admin(current_user)
+        if payload.visibility == TicketVisibility.restricted and current_user.role != UserRole.admin:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Restricted tickets require admin assignment.")
         get_assignable_user(session, payload.assigned_to_id)
 
     ticket = Ticket(
