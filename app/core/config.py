@@ -4,6 +4,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     app_name: str = "Incident Management API"
     environment: str = "development"
+    demo_mode: bool = True
     secret_key: str = "change-me"
     access_token_expire_minutes: int = 120
     database_url: str = "sqlite:///./data/incidents.db"

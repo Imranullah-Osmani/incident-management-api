@@ -22,6 +22,7 @@
                     <a class="button button-secondary" href="/health/ready">Readiness Check</a>
                 </div>
             </div>
+            {% if demo_accounts %}
             <div class="hero-side">
                 <div class="credentials-card">
                     <p class="eyebrow">Demo access</p>
@@ -36,6 +37,7 @@
                     </ul>
                 </div>
             </div>
+            {% endif %}
         </header>
 
         <section class="panel-grid">
@@ -46,9 +48,9 @@
                 </div>
                 <form id="login-form" class="action-card">
                     <label>Email</label>
-                    <input name="email" value="admin@example.com">
+                    <input name="email" value="{{ demo_accounts[0].email if demo_accounts else '' }}">
                     <label>Password</label>
-                    <input name="password" type="password" value="ChangeMe123!">
+                    <input name="password" type="password" value="{{ demo_accounts[0].password if demo_accounts else '' }}">
                     <button type="submit">Get Access Token</button>
                 </form>
                 <div class="info-grid">

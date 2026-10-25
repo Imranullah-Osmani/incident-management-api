@@ -38,6 +38,10 @@ Open:
 - `http://localhost:8002/health/ready` for readiness status; degraded dependencies return HTTP `503`
 - Docker Compose health checks cover the API, Redis, and optional PostgreSQL services
 
+### Demo mode
+
+`DEMO_MODE=True` preserves the portfolio walkthrough by creating missing demo accounts and showing demo login hints. Set `DEMO_MODE=False` for deployments using real accounts: startup skips seeding, the login form has no preset credentials, and `/demo/users` returns HTTP 404. This switch does not delete or disable accounts already stored in the database; review those separately when changing deployment mode.
+
 ### Tests
 
 ```bash

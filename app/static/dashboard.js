@@ -106,7 +106,15 @@ async function loadHealth() {
 
 async function loadUsers() {
   try {
-    setPreview("users-preview", await fetchJson("/demo/users"));
+    const result = await fetchJsonWithStatus("/demo/users");
+    if (result.status === 404) {
+      setPreview("users-preview", "Demo directory is disabled for this deployment.");
+      return;
+    }
+    if (!result.ok) {
+      throw new Error(JSON.stringify(result.data));
+    }
+    setPreview("users-preview", result.data);
   } catch (error) {
     setPreview("users-preview", `Failed to load users:\n${error.message}`);
   }

@@ -86,8 +86,9 @@ def seed_demo_users(session: Session) -> None:
 @app.on_event("startup")
 def on_startup() -> None:
     Base.metadata.create_all(bind=engine)
-    with SessionLocal() as session:
-        seed_demo_users(session)
+    if settings.demo_mode:
+        with SessionLocal() as session:
+            seed_demo_users(session)
 
 
 def get_current_user(
@@ -330,7 +331,7 @@ def homepage(request: Request):
                 {"email": "admin@example.com", "password": "ChangeMe123!", "role": "admin"},
                 {"email": "agent@example.com", "password": "ChangeMe123!", "role": "agent"},
                 {"email": "reporter@example.com", "password": "ChangeMe123!", "role": "reporter"},
-            ],
+            ] if settings.demo_mode else [],
             "endpoints": [
                 {"method": "POST", "path": "/auth/login", "summary": "Issue a JWT for the incident console."},
                 {"method": "GET", "path": "/tickets", "summary": "List tickets visible to the authenticated role."},
@@ -356,6 +357,8 @@ def login(payload: LoginRequest, session: Session = Depends(get_db)) -> TokenRes
 
 @app.get("/demo/users", response_model=list[UserResponse])
 def demo_users(session: Session = Depends(get_db)):
+    if not settings.demo_mode:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Demo directory is disabled.")
     return list(session.scalars(select(User).where(User.is_active.is_(True)).order_by(User.role, User.email)))
 
 
