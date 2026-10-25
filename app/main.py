@@ -33,7 +33,7 @@ from app.tasks import notify_ticket_change
 
 
 app = FastAPI(title=settings.app_name, version="0.1.0")
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
 BASE_DIR = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
@@ -91,16 +91,23 @@ def on_startup() -> None:
 
 
 def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    credentials: HTTPAuthorizationCredentials | None = Depends(security),
     session: Session = Depends(get_db),
 ) -> User:
+    unauthorized = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid authentication credentials.",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    if credentials is None:
+        raise unauthorized
     try:
         subject = decode_access_token(credentials.credentials)
     except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authentication credentials.") from exc
+        raise unauthorized from exc
     user = session.scalar(select(User).where(User.id == subject))
     if not user or not user.is_active:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authentication credentials.")
+        raise unauthorized
     return user
 
 

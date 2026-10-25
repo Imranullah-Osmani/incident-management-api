@@ -24,6 +24,8 @@ Use the returned `access_token` as a bearer token in the remaining requests.
 
 Bearer tokens must contain a subject and an expiration claim. Expired tokens, missing or null expirations, and invalid signatures return HTTP 401 with the same invalid-credentials response.
 
+Protected routes also return HTTP 401 with `WWW-Authenticate: Bearer` when credentials are missing, use another authentication scheme, or belong to a disabled/missing user. Authenticated users denied by role or visibility rules retain the existing HTTP 403/404 responses.
+
 ## 2. Check readiness
 
 ```bash
