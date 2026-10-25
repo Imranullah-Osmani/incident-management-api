@@ -34,3 +34,7 @@ The Celery worker waits for Redis to become healthy before it starts. That keeps
 - Sentry or equivalent exception alerting
 - Dead-letter handling for failed notification tasks
 - Postgres-backed migrations through Alembic
+## Eager Notification Mode
+
+With `CELERY_TASK_ALWAYS_EAGER=True`, notification tasks execute in the API process without a Redis connection check or publish. This supports local runs without async infrastructure. With the setting disabled, dispatch checks broker connectivity and publishes through Celery. Task failure does not roll back a committed ticket change. Readiness still reports Redis connectivity separately.
+

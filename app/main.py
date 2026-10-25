@@ -294,6 +294,13 @@ def ensure_ticket_assignment_admin_boundary(ticket: Ticket, user: User) -> None:
 
 
 def enqueue_notification(event_type: str, ticket_id: str, recipient: str | None = None) -> None:
+    if settings.celery_task_always_eager:
+        try:
+            notify_ticket_change.apply(args=(event_type, ticket_id, recipient), throw=True)
+        except Exception:
+            # Notification failure must not undo an already committed ticket change.
+            return
+        return
     broker = urlparse(settings.redis_url)
     host = broker.hostname
     port = broker.port or 6379
