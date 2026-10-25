@@ -8,6 +8,8 @@ Demo accounts:
 - `agent@example.com` / `ChangeMe123!`
 - `reporter@example.com` / `ChangeMe123!`
 
+Startup creates demo accounts only when their email is missing (case-insensitive). Existing passwords, roles, profile names, and disabled states are preserved across restarts. The credentials above apply to newly seeded accounts; restarting does not reset changed credentials.
+
 ## 1. Issue a JWT
 
 ```bash

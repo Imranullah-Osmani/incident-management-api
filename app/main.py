@@ -68,12 +68,8 @@ def seed_demo_users(session: Session) -> None:
     ]
 
     for demo_user in demo_users:
-        user = session.scalar(select(User).where(User.email == demo_user["email"]))
+        user = session.scalar(select(User).where(func.lower(User.email) == demo_user["email"]))
         if user:
-            user.full_name = demo_user["full_name"]
-            user.role = demo_user["role"]
-            user.is_active = True
-            user.hashed_password = hash_password("ChangeMe123!")
             continue
 
         session.add(
