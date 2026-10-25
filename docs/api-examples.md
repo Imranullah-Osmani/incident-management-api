@@ -4,6 +4,8 @@ These examples assume the service is running at `http://localhost:8002`.
 
 Demo accounts:
 
+When demo mode is enabled, the public `/demo/users` directory lists only the three known demo emails and omits disabled accounts. Ordinary application accounts are never included in this directory. Set `DEMO_MODE=False` to disable the directory entirely.
+
 - `admin@example.com` / `ChangeMe123!`
 - `agent@example.com` / `ChangeMe123!`
 - `reporter@example.com` / `ChangeMe123!`

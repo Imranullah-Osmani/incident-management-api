@@ -8,6 +8,7 @@ from fastapi import HTTPException
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.database import Base
 from app.main import demo_users, ensure_agent_or_admin, enqueue_notification, get_visible_ticket, list_visible_tickets, login, summarize_visible_tickets, visible_ticket_query
 from app.models import Ticket, TicketStatus, TicketVisibility, User, UserRole
@@ -319,12 +320,16 @@ class VisibilityPolicyTests(unittest.TestCase):
         self.reporter.is_active = False
         self.session.commit()
 
-        users = demo_users(session=self.session)
+        with patch.object(settings, "demo_mode", True):
+            users = demo_users(session=self.session)
 
         self.assertNotIn(self.reporter.email, {user.email for user in users})
 
     def test_notification_enqueue_degrades_without_redis(self) -> None:
-        with patch("app.main.socket.create_connection", side_effect=OSError("broker unavailable")) as connect:
+        with (
+            patch.object(settings, "celery_task_always_eager", False),
+            patch("app.main.socket.create_connection", side_effect=OSError("broker unavailable")) as connect,
+        ):
             enqueue_notification("ticket_created", self.public_ticket.id)
         connect.assert_called_once()
 

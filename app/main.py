@@ -50,6 +50,11 @@ PRIORITY_ORDER = ("low", "medium", "high", "critical")
 MAX_FILTER_LENGTH = 100
 MAX_IDENTIFIER_LENGTH = 36
 REDIS_HEALTH_TIMEOUT_SECONDS = 0.35
+DEMO_USERS = (
+    {"full_name": "System Admin", "email": "admin@example.com", "role": UserRole.admin},
+    {"full_name": "Support Agent", "email": "agent@example.com", "role": UserRole.agent},
+    {"full_name": "Reporting User", "email": "reporter@example.com", "role": UserRole.reporter},
+)
 
 
 def get_db():
@@ -61,13 +66,7 @@ def get_db():
 
 
 def seed_demo_users(session: Session) -> None:
-    demo_users = [
-        {"full_name": "System Admin", "email": "admin@example.com", "role": UserRole.admin},
-        {"full_name": "Support Agent", "email": "agent@example.com", "role": UserRole.agent},
-        {"full_name": "Reporting User", "email": "reporter@example.com", "role": UserRole.reporter},
-    ]
-
-    for demo_user in demo_users:
+    for demo_user in DEMO_USERS:
         user = session.scalar(select(User).where(func.lower(User.email) == demo_user["email"]))
         if user:
             continue
@@ -328,9 +327,8 @@ def homepage(request: Request):
         context={
             "request": request,
             "demo_accounts": [
-                {"email": "admin@example.com", "password": "ChangeMe123!", "role": "admin"},
-                {"email": "agent@example.com", "password": "ChangeMe123!", "role": "agent"},
-                {"email": "reporter@example.com", "password": "ChangeMe123!", "role": "reporter"},
+                {"email": user["email"], "password": "ChangeMe123!", "role": user["role"].value}
+                for user in DEMO_USERS
             ] if settings.demo_mode else [],
             "endpoints": [
                 {"method": "POST", "path": "/auth/login", "summary": "Issue a JWT for the incident console."},
@@ -359,7 +357,12 @@ def login(payload: LoginRequest, session: Session = Depends(get_db)) -> TokenRes
 def demo_users(session: Session = Depends(get_db)):
     if not settings.demo_mode:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Demo directory is disabled.")
-    return list(session.scalars(select(User).where(User.is_active.is_(True)).order_by(User.role, User.email)))
+    return list(session.scalars(
+        select(User).where(
+            User.is_active.is_(True),
+            func.lower(User.email).in_([user["email"] for user in DEMO_USERS]),
+        ).order_by(User.role, User.email)
+    ))
 
 
 @app.get("/tickets", response_model=list[TicketResponse])

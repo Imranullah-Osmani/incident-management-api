@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import unittest
+from unittest.mock import patch
 
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
 from app.database import Base
-from app.main import seed_demo_users
+from app.core.config import settings
+from app.main import demo_users, seed_demo_users
 from app.models import User, UserRole
 from app.security import hash_password, verify_password
 
@@ -74,6 +76,37 @@ class DemoSeedTests(unittest.TestCase):
         users = list(self.session.scalars(select(User)))
         self.assertEqual(len(users), 3)
         self.assertEqual(sum(item.email.lower() == "admin@example.com" for item in users), 1)
+
+    def test_public_demo_directory_excludes_ordinary_accounts(self) -> None:
+        seed_demo_users(self.session)
+        self.session.add(User(
+            full_name="Private Customer", email="private.customer@example.com", role=UserRole.reporter,
+            hashed_password=hash_password("PrivatePassword456!"),
+        ))
+        self.session.commit()
+
+        with patch.object(settings, "demo_mode", True):
+            directory = demo_users(session=self.session)
+
+        self.assertEqual({user.email for user in directory}, {
+            "admin@example.com", "agent@example.com", "reporter@example.com",
+        })
+
+    def test_public_demo_directory_matches_case_and_omits_disabled_demo_users(self) -> None:
+        self.session.add(User(
+            full_name="Existing Admin", email="ADMIN@EXAMPLE.COM", role=UserRole.admin,
+            hashed_password=hash_password("ChangedPassword456!"),
+        ))
+        self.session.commit()
+        seed_demo_users(self.session)
+        reporter = self.session.scalar(select(User).where(User.email == "reporter@example.com"))
+        reporter.is_active = False
+        self.session.commit()
+
+        with patch.object(settings, "demo_mode", True):
+            directory = demo_users(session=self.session)
+
+        self.assertEqual({user.email for user in directory}, {"ADMIN@EXAMPLE.COM", "agent@example.com"})
 
 
 if __name__ == "__main__":
