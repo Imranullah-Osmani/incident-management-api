@@ -36,6 +36,38 @@ class TokenSecurityTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             decode_access_token(token)
 
+    def test_decode_access_token_requires_expiration(self) -> None:
+        token = jwt.encode({"sub": "user-123"}, settings.secret_key, algorithm=ALGORITHM)
+
+        with self.assertRaises(ValueError):
+            decode_access_token(token)
+
+    def test_decode_access_token_rejects_expired_token(self) -> None:
+        token = jwt.encode(
+            {"sub": "user-123", "exp": datetime.now(timezone.utc) - timedelta(minutes=1)},
+            settings.secret_key,
+            algorithm=ALGORITHM,
+        )
+
+        with self.assertRaises(ValueError):
+            decode_access_token(token)
+
+    def test_decode_access_token_rejects_null_expiration(self) -> None:
+        token = jwt.encode({"sub": "user-123", "exp": None}, settings.secret_key, algorithm=ALGORITHM)
+
+        with self.assertRaises(ValueError):
+            decode_access_token(token)
+
+    def test_decode_access_token_rejects_wrong_signature(self) -> None:
+        token = jwt.encode(
+            {"sub": "user-123", "exp": datetime.now(timezone.utc) + timedelta(minutes=5)},
+            "different-signing-key",
+            algorithm=ALGORITHM,
+        )
+
+        with self.assertRaises(ValueError):
+            decode_access_token(token)
+
     def test_login_request_bounds_password_length(self) -> None:
         with self.assertRaises(ValueError):
             LoginRequest(email="admin@example.com", password="short")

@@ -18,6 +18,8 @@ curl -s -X POST http://localhost:8002/auth/login \
 
 Use the returned `access_token` as a bearer token in the remaining requests.
 
+Bearer tokens must contain a subject and an expiration claim. Expired tokens, missing or null expirations, and invalid signatures return HTTP 401 with the same invalid-credentials response.
+
 ## 2. Check readiness
 
 ```bash
